@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Check if any staged Rust files need formatting
+if ! cargo fmt --check ; then
+cargo fmt
+git update-index --again
+echo "Formatted Rust code successfully. Commit again!"
+exit 1
+fi
+
+STASH_COUNT_BEFORE=$(git stash list 2>/dev/null | wc -l | tr -d '[:space:]')
+git stash --quiet --keep-index --include-untracked
+STASH_COUNT_AFTER=$(git stash list 2>/dev/null | wc -l | tr -d '[:space:]')
+
+if [ "$STASH_COUNT_AFTER" -gt "$STASH_COUNT_BEFORE" ]; then
+  trap "git stash pop --quiet" EXIT
+fi
+
+printf "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✓ Code style is good\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+
+printf "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n Running all unit tests...\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+if ! cargo test ; then
+  echo "❌ Fix failing tests and commit again"
+  exit 1
+fi
+printf "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✓ All unit tests passed\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+exit 0
