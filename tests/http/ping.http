@@ -1,0 +1,4 @@
+### GET request to local server
+GET http://localhost:8080
+
+###
