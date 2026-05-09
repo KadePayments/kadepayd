@@ -1,4 +1,4 @@
-name: build.yml
+name: Build
 on:
   push:
     branches:
@@ -14,23 +14,22 @@ jobs:
       - check-format
 
     runs-on: ubuntu-latest
-    environment: Development
 
     steps:
       - uses: actions/checkout@v6
       - name: Build
-        run: cargo build
+        run: cargo build --locked
 
   tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Tests
-        run: cargo test
+        run: cargo test --locked
 
   check-format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Check code style
-        run: cargo fmt --check
+        run: cargo fmt --check --locked
