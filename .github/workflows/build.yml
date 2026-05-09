@@ -18,18 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Build
-        run: cargo build --locked
+        run: cargo build
 
   tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Tests
-        run: cargo test --locked
+        run: cargo test
 
   check-format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Check code style
-        run: cargo fmt --check --locked
+        run: cargo fmt --check
