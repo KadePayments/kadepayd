@@ -13,7 +13,7 @@ git stash --quiet --keep-index --include-untracked
 STASH_COUNT_AFTER=$(git stash list 2>/dev/null | wc -l | tr -d '[:space:]')
 
 if [ "$STASH_COUNT_AFTER" -gt "$STASH_COUNT_BEFORE" ]; then
-  trap "git stash pop --quiet" EXIT
+  trap "git stash pop --quiet || echo '❌️  Failed to restore stashed changes. Run: git stash pop'" EXIT
 fi
 
 printf "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✓ Code style is good\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
