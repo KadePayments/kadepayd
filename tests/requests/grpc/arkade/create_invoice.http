@@ -1,0 +1,10 @@
+###
+GRPC localhost:50051/kadepay.v1.services.invoice.InvoiceService/CreateInvoice
+Content-Type: application/json
+
+{
+  "network": "Arkade",
+  "currency": "₿",
+  "amount": "4",
+  "description": "Test invoice creation on Arkade"
+}
