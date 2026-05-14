@@ -1,4 +1,5 @@
 use crate::data::config::Config;
+use crate::data::errors::StorageError;
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use native_tls::TlsConnector;
@@ -13,32 +14,29 @@ impl Storage {
     const MAX_CONNECTIONS: u32 = 13;
     const MIN_IDLE_CONNECTIONS: u32 = 3;
 
-    pub async fn new() -> Result<Storage, String> {
+    pub async fn new() -> Result<Storage, StorageError> {
         let config = Config::new();
         let connection_string = format!(
             "host={} user={} password={}",
             config.db_url, config.db_user, config.db_password
         );
-        match TlsConnector::builder().build() {
-            Ok(tls_connector) => {
-                let tls = MakeTlsConnector::new(tls_connector);
-                match PostgresConnectionManager::new_from_stringlike(connection_string, tls) {
-                    Ok(pool_connection_manager) => {
-                        match Pool::builder()
-                            .max_size(Self::MAX_CONNECTIONS)
-                            .min_idle(Self::MIN_IDLE_CONNECTIONS)
-                            .build(pool_connection_manager)
-                            .await
-                        {
-                            Ok(pool) => Ok(Storage { pool }),
-                            Err(error) => Err(format!("{}", error)),
-                        }
-                    }
-                    Err(error) => Err(format!("{}", error)),
-                }
-            }
-            Err(error) => Err(format!("{}", error)),
-        }
+        let tls_connector = TlsConnector::builder().build().map_err(|error| {
+            StorageError::new(format!("Failed to build TLS connector: {}", error))
+        })?;
+        let tls = MakeTlsConnector::new(tls_connector);
+        let pool_connection_manager =
+            PostgresConnectionManager::new_from_stringlike(connection_string, tls).map_err(
+                |error| StorageError::new(format!("Failed to create pool connection: {}", error)),
+            )?;
+        let pool = Pool::builder()
+            .max_size(Self::MAX_CONNECTIONS)
+            .min_idle(Self::MIN_IDLE_CONNECTIONS)
+            .build(pool_connection_manager)
+            .await
+            .map_err(|error| {
+                StorageError::new(format!("Failed to build connection pool: {}", error))
+            })?;
+        Ok(Storage { pool })
     }
 
     pub async fn init(&self, create_table_commands: &[&str]) -> Result<(), String> {
