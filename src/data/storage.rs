@@ -17,8 +17,8 @@ impl Storage {
     pub async fn new() -> Result<Storage, StorageError> {
         let config = Config::new();
         let connection_string = format!(
-            "host={} user={} password={}",
-            config.db_url, config.db_user, config.db_password
+            "host={} user={} password={} dbname={}",
+            config.db_url, config.db_user, config.db_password, config.db_name
         );
         let tls_connector = TlsConnector::builder().build().map_err(|error| {
             StorageError::new(format!("Failed to build TLS connector: {}", error))

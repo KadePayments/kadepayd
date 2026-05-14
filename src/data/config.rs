@@ -5,6 +5,7 @@ pub struct Config {
     pub db_url: String,
     pub db_user: String,
     pub db_password: String,
+    pub db_name: String,
 }
 
 impl Config {
@@ -22,10 +23,15 @@ impl Config {
             .ok()
             .or_else(|| local_secrets.get("db_password").cloned())
             .expect("Missing DB_PASSWORD environment variable or db_password in secrets");
+        let db_name = env::var("DB_NAME")
+            .ok()
+            .or_else(|| local_secrets.get("db_name").cloned())
+            .expect("Missing DB_NAME environment variable or db_name in secrets");
         Self {
             db_url,
             db_user,
             db_password,
+            db_name,
         }
     }
 }
