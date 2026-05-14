@@ -10,10 +10,18 @@ pub struct Config {
 impl Config {
     pub fn new() -> Self {
         let local_secrets = read_local_secrets();
-        let db_url = env::var("DB_URL").unwrap_or_else(|_| local_secrets["db_url"].to_string());
-        let db_user = env::var("DB_USER").unwrap_or_else(|_| local_secrets["db_user"].to_string());
-        let db_password =
-            env::var("DB_PASSWORD").unwrap_or_else(|_| local_secrets["db_password"].to_string());
+        let db_url = env::var("DB_URL")
+            .ok()
+            .or_else(|| local_secrets.get("db_url").cloned())
+            .expect("Missing DB_URL environment variable or db_url in secrets");
+        let db_user = env::var("DB_USER")
+            .ok()
+            .or_else(|| local_secrets.get("db_user").cloned())
+            .expect("Missing DB_USER environment variable or db_user in secrets");
+        let db_password = env::var("DB_PASSWORD")
+            .ok()
+            .or_else(|| local_secrets.get("db_password").cloned())
+            .expect("Missing DB_PASSWORD environment variable or db_password in secrets");
         Self {
             db_url,
             db_user,
@@ -39,10 +47,11 @@ fn read_local_secrets() -> HashMap<String, String> {
                         if line.is_empty() {
                             continue;
                         }
-                        let parts: Vec<&str> = line.split('=').collect();
-                        let key = parts[0];
-                        let value = parts[1];
-                        secrets.insert(key.to_string(), value.to_string());
+                        let Some((key, value)) = line.split_once("=") else {
+                            eprintln!("Invalid secret line");
+                            continue;
+                        };
+                        secrets.insert(key.trim().to_string(), value.trim().to_string());
                     }
                 }
                 Err(error) => {
