@@ -39,22 +39,23 @@ impl Storage {
         Ok(Storage { pool })
     }
 
-    pub async fn init(&self, create_table_commands: &[&str]) -> Result<(), String> {
+    pub async fn init(&self, create_table_commands: &[&str]) -> Result<(), StorageError> {
+        let mut connection = self.pool.get().await.map_err(|error| {
+            StorageError::new(format!("Error connecting to database: {}", error))
+        })?;
+        let transaction = connection.transaction().await.map_err(|error| {
+            StorageError::new(format!("Failed to start transaction: {}", error))
+        })?;
+
         for create_table_sql in create_table_commands {
-            let connection = self
-                .pool
-                .get()
+            transaction
+                .batch_execute(&create_table_sql)
                 .await
-                .map_err(|error| format!("Error connecting to database: {}", error))?;
-            let statement = connection
-                .prepare(create_table_sql)
-                .await
-                .map_err(|error| format!("Error preparing statement from database: {}", error))?;
-            connection
-                .execute(&statement, &[])
-                .await
-                .map_err(|error| format!("Error executing statement from database: {}", error))?;
+                .map_err(|error| StorageError::new(format!("Failed to create table: {}", error)))?;
         }
+        transaction.commit().await.map_err(|error| {
+            StorageError::new(format!("Failed to commit transaction: {}", error))
+        })?;
         Ok(())
     }
 
@@ -62,20 +63,25 @@ impl Storage {
         &self,
         sql: &str,
         params: &[&(dyn ToSql + Sync)],
-    ) -> Result<Vec<Row>, String> {
-        let connection = self
-            .pool
-            .get()
-            .await
-            .map_err(|error| format!("Error connecting to database: {}", error))?;
-        let statement = connection
-            .prepare(sql)
-            .await
-            .map_err(|error| format!("Error preparing statement from database: {}", error))?;
+    ) -> Result<Vec<Row>, StorageError> {
+        let connection = self.pool.get().await.map_err(|error| {
+            StorageError::new(format!("Error connecting to database: {}", error))
+        })?;
+        let statement = connection.prepare(sql).await.map_err(|error| {
+            StorageError::new(format!(
+                "Error preparing statement from database: {}",
+                error
+            ))
+        })?;
         let rows = connection
             .query(&statement, &params)
             .await
-            .map_err(|error| format!("Error executing statement from database: {}", error))?;
+            .map_err(|error| {
+                StorageError::new(format!(
+                    "Error executing statement from database: {}",
+                    error
+                ))
+            })?;
         Ok(rows)
     }
 
@@ -83,37 +89,51 @@ impl Storage {
         &self,
         sql: &str,
         params: &[&(dyn ToSql + Sync)],
-    ) -> Result<Row, String> {
-        let connection = self
-            .pool
-            .get()
-            .await
-            .map_err(|error| format!("Error connecting to database: {}", error))?;
-        let statement = connection
-            .prepare(sql)
-            .await
-            .map_err(|error| format!("Error preparing statement from database: {}", error))?;
+    ) -> Result<Row, StorageError> {
+        let connection = self.pool.get().await.map_err(|error| {
+            StorageError::new(format!("Error connecting to database: {}", error))
+        })?;
+        let statement = connection.prepare(sql).await.map_err(|error| {
+            StorageError::new(format!(
+                "Error preparing statement from database: {}",
+                error
+            ))
+        })?;
         let row = connection
             .query_one(&statement, &params)
             .await
-            .map_err(|error| format!("Error executing statement from database: {}", error))?;
+            .map_err(|error| {
+                StorageError::new(format!(
+                    "Error executing statement from database: {}",
+                    error
+                ))
+            })?;
         Ok(row)
     }
 
-    pub async fn execute(&self, sql: &str, params: &[&(dyn ToSql + Sync)]) -> Result<u64, String> {
-        let connection = self
-            .pool
-            .get()
-            .await
-            .map_err(|error| format!("Error connecting to database: {}", error))?;
-        let statement = connection
-            .prepare(sql)
-            .await
-            .map_err(|error| format!("Error preparing statement from database: {}", error))?;
+    pub async fn execute(
+        &self,
+        sql: &str,
+        params: &[&(dyn ToSql + Sync)],
+    ) -> Result<u64, StorageError> {
+        let connection = self.pool.get().await.map_err(|error| {
+            StorageError::new(format!("Error connecting to database: {}", error))
+        })?;
+        let statement = connection.prepare(sql).await.map_err(|error| {
+            StorageError::new(format!(
+                "Error preparing statement from database: {}",
+                error
+            ))
+        })?;
         let number_of_rows = connection
             .execute(&statement, params)
             .await
-            .map_err(|error| format!("Error executing statement from database: {}", error))?;
+            .map_err(|error| {
+                StorageError::new(format!(
+                    "Error executing statement from database: {}",
+                    error
+                ))
+            })?;
         Ok(number_of_rows)
     }
 }
