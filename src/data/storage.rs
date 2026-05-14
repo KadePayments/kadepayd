@@ -74,7 +74,7 @@ impl Storage {
             ))
         })?;
         let rows = connection
-            .query(&statement, &params)
+            .query(&statement, params)
             .await
             .map_err(|error| {
                 StorageError::new(format!(
@@ -100,7 +100,7 @@ impl Storage {
             ))
         })?;
         let row = connection
-            .query_one(&statement, &params)
+            .query_one(&statement, params)
             .await
             .map_err(|error| {
                 StorageError::new(format!(
