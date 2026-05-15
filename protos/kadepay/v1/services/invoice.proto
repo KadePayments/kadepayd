@@ -8,17 +8,18 @@ service InvoiceService {
 
 message NewInvoiceRequest {
     string network = 1;
-    string currency = 2;
-    string amount = 3;
+    string currency_code = 2;
+    double amount = 3;
     string description = 4;
 }
 
 message NewInvoiceResponse {
     string id = 1;
     string network = 2;
-    string currency = 3;
-    string amount = 4;
+    string currency_code = 3;
+    double amount = 4;
     string address = 5;
-    string created_at = 6;
-    string status = 7;
+    int64 created_at = 6;
+    string description = 7;
+    string status = 8;
 }

@@ -7,6 +7,9 @@ use postgres_native_tls::MakeTlsConnector;
 use tokio_postgres::Row;
 use tokio_postgres::types::ToSql;
 
+trait FromStorage {}
+
+#[derive(Debug)]
 pub struct Storage {
     pool: Pool<PostgresConnectionManager<MakeTlsConnector>>,
 }
@@ -17,8 +20,8 @@ impl Storage {
     pub async fn new() -> Result<Storage, StorageError> {
         let config = Config::new();
         let connection_string = format!(
-            "host={} user={} password={} dbname={}",
-            config.db_url, config.db_user, config.db_password, config.db_name
+            "host={} user={} password={}",
+            config.db_url, config.db_user, config.db_password
         );
         let tls_connector = TlsConnector::builder().build().map_err(|error| {
             StorageError::new(format!("Failed to build TLS connector: {}", error))
