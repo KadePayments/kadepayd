@@ -19,11 +19,11 @@ impl Storage {
     const MIN_IDLE_CONNECTIONS: u32 = 3;
 
     pub async fn new(embedded: bool) -> Result<Storage, StorageError> {
-        let config = Config::new();
         let (connection_string, db_process): (String, Option<PostgreSQL>) = if embedded {
             let (conn_s, db_p) = Self::create_embedded_db().await?;
             (conn_s, Some(db_p))
         } else {
+            let config = Config::new();
             (
                 format!(
                     "host={} user={} password={} dbname={}",
