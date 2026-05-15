@@ -1,26 +1,26 @@
-use tokio::net::{TcpListener, TcpStream};
-use tokio::spawn;
+use crate::data::errors::StorageError;
+use crate::data::storage::Storage;
+use crate::invoice::invoice_service_server::InvoiceServiceServer;
+use crate::server::config::Config;
+use crate::services::invoice_service::KadeInvoiceService;
+use tonic::transport::Server;
 
 pub struct Engine;
 impl Engine {
-    pub async fn start<F, Fut>(address: String, block: F)
-    where
-        F: Fn(TcpStream) -> Fut,
-        Fut: Future + Send + 'static,
-        Fut::Output: Send + 'static,
-    {
-        match TcpListener::bind(address.as_str()).await {
-            Ok(listener) => loop {
-                match listener.accept().await {
-                    Ok((socket, _addr)) => {
-                        spawn(block(socket));
-                    }
-                    Err(e) => eprintln!("error accepting socket: {}", e),
-                };
-            },
-            Err(e) => {
-                eprintln!("could not bind address: {}", e);
-            }
-        }
+    pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
+        let server_config = Config::new();
+        let storage = Storage::new(false).await?;
+        Self::init_storage(&storage).await?;
+        let invoice_service = KadeInvoiceService::new(storage);
+        Server::builder()
+            .add_service(InvoiceServiceServer::new(invoice_service))
+            .serve(server_config.kade_invoice_server_addr)
+            .await?;
+        Ok(())
+    }
+
+    async fn init_storage(storage: &Storage) -> Result<(), StorageError> {
+        let create_table_commands = [KadeInvoiceService::CREATE_TABLE];
+        storage.init(&create_table_commands).await
     }
 }
