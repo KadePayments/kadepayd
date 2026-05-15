@@ -1,4 +1,5 @@
 use crate::server::engine::Engine;
+use std::process::exit;
 
 mod data;
 mod server;
@@ -10,5 +11,11 @@ pub mod invoice {
 
 #[tokio::main]
 async fn main() {
-    Engine::start().await;
+    match Engine::start().await {
+        Ok(_) => (),
+        Err(error) => {
+            eprintln!("Server could not start: {}", error);
+            exit(1)
+        }
+    }
 }

@@ -8,27 +8,16 @@ use tonic::transport::Server;
 
 pub struct Engine;
 impl Engine {
-    pub async fn start() {
+    pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
         let server_config = Config::new();
-        match Storage::new().await {
-            Ok(storage) => {
-                Self::init_storage(&storage).await;
-
-                let invoice_service = KadeInvoiceService::new(storage);
-                match Server::builder()
-                    .add_service(InvoiceServiceServer::new(invoice_service))
-                    .serve(server_config.kade_invoice_server_addr)
-                    .await
-                {
-                    Ok(_) => println!("Invoice server started successfully"),
-                    Err(error) => eprintln!("Failed to start the invoice server: {}", error),
-                }
-            }
-            Err(error) => {
-                eprintln!("Server could not start: {}", error.message);
-                exit(1)
-            }
-        }
+        let storage = Storage::new().await?;
+        Self::init_storage(&storage).await?;
+        let invoice_service = KadeInvoiceService::new(storage);
+        Server::builder()
+            .add_service(InvoiceServiceServer::new(invoice_service))
+            .serve(server_config.kade_invoice_server_addr)
+            .await?;
+        Ok(())
     }
 
     async fn init_storage(storage: &Storage) -> Result<(), StorageError> {
