@@ -3,14 +3,13 @@ use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceServiceServer;
 use crate::server::config::Config;
 use crate::services::invoice_service::KadeInvoiceService;
-use std::process::exit;
 use tonic::transport::Server;
 
 pub struct Engine;
 impl Engine {
     pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
         let server_config = Config::new();
-        let storage = Storage::new().await?;
+        let storage = Storage::new(false).await?;
         Self::init_storage(&storage).await?;
         let invoice_service = KadeInvoiceService::new(storage);
         Server::builder()

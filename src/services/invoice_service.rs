@@ -3,7 +3,6 @@ use crate::invoice::invoice_service_server::InvoiceService;
 use crate::invoice::{NewInvoiceRequest, NewInvoiceResponse};
 use chrono::Utc;
 use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive;
 use std::str::FromStr;
 use tonic::{Request, Response, Status};
 
@@ -47,7 +46,11 @@ impl InvoiceService for KadeInvoiceService {
         request: Request<NewInvoiceRequest>,
     ) -> Result<Response<NewInvoiceResponse>, Status> {
         let invoice = request.into_inner();
-        let address = "bc1q...".to_string();
+        let address = if invoice.network == "Arkade" {
+            "<ark1...>".to_string()
+        } else {
+            "<bc1q...>".to_string()
+        };
         let status = "pending".to_string();
         let created_at = Utc::now();
         let amount = match Decimal::from_str(invoice.amount.as_str()) {

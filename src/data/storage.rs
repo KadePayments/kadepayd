@@ -4,23 +4,34 @@ use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use native_tls::TlsConnector;
 use postgres_native_tls::MakeTlsConnector;
+use postgresql_embedded::{PostgreSQL, Settings};
 use tokio_postgres::Row;
 use tokio_postgres::types::ToSql;
 
 #[derive(Debug)]
 pub struct Storage {
-    pool: Pool<PostgresConnectionManager<MakeTlsConnector>>,
+    pub pool: Pool<PostgresConnectionManager<MakeTlsConnector>>,
+    pub db_process: Option<PostgreSQL>,
 }
+
 impl Storage {
     const MAX_CONNECTIONS: u32 = 13;
     const MIN_IDLE_CONNECTIONS: u32 = 3;
 
-    pub async fn new() -> Result<Storage, StorageError> {
+    pub async fn new(embedded: bool) -> Result<Storage, StorageError> {
         let config = Config::new();
-        let connection_string = format!(
-            "host={} user={} password={} dbname={}",
-            config.db_url, config.db_user, config.db_password, config.db_name
-        );
+        let (connection_string, db_process): (String, Option<PostgreSQL>) = if embedded {
+            let (conn_s, db_p) = Self::create_embedded_db().await?;
+            (conn_s, Some(db_p))
+        } else {
+            (
+                format!(
+                    "host={} user={} password={} dbname={}",
+                    config.db_url, config.db_user, config.db_password, config.db_name
+                ),
+                None,
+            )
+        };
         let tls_connector = TlsConnector::builder().build().map_err(|error| {
             StorageError::new(format!("Failed to build TLS connector: {}", error))
         })?;
@@ -37,7 +48,30 @@ impl Storage {
             .map_err(|error| {
                 StorageError::new(format!("Failed to build connection pool: {}", error))
             })?;
-        Ok(Storage { pool })
+        Ok(Storage { pool, db_process })
+    }
+
+    // This is an in-memory database for testing
+    async fn create_embedded_db() -> Result<(String, PostgreSQL), StorageError> {
+        let settings = Settings::new();
+        let mut postgresql = PostgreSQL::new(settings);
+
+        postgresql
+            .setup()
+            .await
+            .map_err(|error| StorageError::new(format!("Failed to setup database: {}", error)))?;
+        postgresql
+            .start()
+            .await
+            .map_err(|error| StorageError::new(format!("Failed to start database: {}", error)))?;
+
+        let database_name = "kade_test_db";
+        postgresql
+            .create_database(database_name)
+            .await
+            .map_err(|error| StorageError::new(format!("Failed to create database: {}", error)))?;
+        let connection_string = postgresql.settings().url(database_name);
+        Ok((connection_string, postgresql))
     }
 
     pub async fn init(&self, create_table_commands: &[&str]) -> Result<(), StorageError> {
