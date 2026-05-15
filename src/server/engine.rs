@@ -1,7 +1,9 @@
+use crate::data::errors::StorageError;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceServiceServer;
 use crate::server::config::Config;
 use crate::services::invoice_service::KadeInvoiceService;
+use std::process::exit;
 use tonic::transport::Server;
 
 pub struct Engine;
@@ -22,15 +24,15 @@ impl Engine {
                     Err(error) => eprintln!("Failed to start the invoice server: {}", error),
                 }
             }
-            Err(error) => eprintln!("{}", error.message),
+            Err(error) => {
+                eprintln!("Server could not start: {}", error.message);
+                exit(1)
+            }
         }
     }
 
-    async fn init_storage(storage: &Storage) {
+    async fn init_storage(storage: &Storage) -> Result<(), StorageError> {
         let create_table_commands = [KadeInvoiceService::CREATE_TABLE];
-        match storage.init(&create_table_commands).await {
-            Ok(_) => (),
-            Err(error) => eprintln!("{}", error.message),
-        }
+        storage.init(&create_table_commands).await
     }
 }

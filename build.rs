@@ -8,7 +8,7 @@ fn main() {
                 "protos/kadepay/v1/services/invoice.proto",
                 "protos/kadepay/v1/services/wallet.proto",
             ],
-            &["proto"],
+            &["protos"],
         );
     match result {
         Ok(_) => {}

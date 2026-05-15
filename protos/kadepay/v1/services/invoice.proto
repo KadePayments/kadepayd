@@ -9,7 +9,7 @@ service InvoiceService {
 message NewInvoiceRequest {
     string network = 1;
     string currency_code = 2;
-    double amount = 3;
+    string amount = 3;
     string description = 4;
 }
 
@@ -17,7 +17,7 @@ message NewInvoiceResponse {
     string id = 1;
     string network = 2;
     string currency_code = 3;
-    double amount = 4;
+    string amount = 4;
     string address = 5;
     int64 created_at = 6;
     string description = 7;

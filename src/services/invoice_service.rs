@@ -4,6 +4,7 @@ use crate::invoice::{NewInvoiceRequest, NewInvoiceResponse};
 use chrono::Utc;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
+use std::str::FromStr;
 use tonic::{Request, Response, Status};
 
 #[derive(Debug)]
@@ -49,12 +50,13 @@ impl InvoiceService for KadeInvoiceService {
         let address = "bc1q...".to_string();
         let status = "pending".to_string();
         let created_at = Utc::now();
-        let amount = match Decimal::from_f64_retain(invoice.amount) {
-            Some(amount) => amount,
-            None => {
-                return Err(Status::invalid_argument(
-                    "cannot create an invoice without a amount",
-                ));
+        let amount = match Decimal::from_str(invoice.amount.as_str()) {
+            Ok(amount) => amount,
+            Err(error) => {
+                return Err(Status::invalid_argument(format!(
+                    "Invalid argument: {}",
+                    error
+                )));
             }
         };
 

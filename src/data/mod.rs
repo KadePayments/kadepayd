@@ -5,7 +5,7 @@ use tokio_postgres::Row;
 use uuid::Uuid;
 
 mod config;
-mod errors;
+pub mod errors;
 pub mod storage;
 
 impl NewInvoiceResponse {
@@ -15,7 +15,7 @@ impl NewInvoiceResponse {
         let amount: Decimal = row.get("amount");
         Self {
             id: id.to_string(),
-            amount: amount.as_f64(),
+            amount: amount.to_string(),
             currency_code: row.get("currency_code"),
             network: row.get("network"),
             address: row.get("address"),
