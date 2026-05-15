@@ -31,7 +31,7 @@ impl KadeInvoiceService {
     status,
     description,
     created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7);";
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;";
     pub const SELECT_BY_ID: &'static str = "SELECT * FROM invoices WHERE id = $1;";
     pub const SELECT_BY_ADDRESS: &'static str = "SELECT * FROM invoices WHERE address = $1;";
 
@@ -59,10 +59,9 @@ impl InvoiceService for KadeInvoiceService {
                 )));
             }
         };
-
-        match self
+        let invoice_row = match self
             .storage
-            .execute(
+            .query_one(
                 Self::INSERT,
                 &[
                     &amount,
@@ -76,18 +75,9 @@ impl InvoiceService for KadeInvoiceService {
             )
             .await
         {
-            Ok(_) => {
-                let invoice_row = match self
-                    .storage
-                    .query_one(Self::SELECT_BY_ADDRESS, &[&address.as_str()])
-                    .await
-                {
-                    Ok(value) => value,
-                    Err(error) => return Err(Status::internal(error.message)),
-                };
-                Ok(Response::new(NewInvoiceResponse::from_row(invoice_row)))
-            }
-            Err(error) => Err(Status::internal(error.message)),
-        }
+            Ok(value) => value,
+            Err(error) => return Err(Status::internal(error.message)),
+        };
+        Ok(Response::new(NewInvoiceResponse::from_row(invoice_row)))
     }
 }

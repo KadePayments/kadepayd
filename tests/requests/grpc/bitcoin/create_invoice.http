@@ -4,7 +4,7 @@ Content-Type: application/json
 
 {
   "network": "Bitcoin",
-  "currency": "₿",
+  "currency_code": "BTC",
   "amount": "4",
   "description": "Test invoice creation on Bitcoin"
 }

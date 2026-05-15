@@ -5,6 +5,6 @@ Content-Type: application/json
 {
   "network": "Arkade",
   "currency_code": "BTC",
-  "amount": 4,
+  "amount": "4",
   "description": "Test invoice creation on Arkade"
 }
