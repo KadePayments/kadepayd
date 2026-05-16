@@ -46,6 +46,11 @@ Build the project:
 ```bash
 cargo build
 ```
+
+Run the daemon:
+```bash
+cargo run --package kadepayd --bin kadepayd
+```
 ---
 
 ## Contributing
