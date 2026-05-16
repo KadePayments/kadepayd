@@ -33,7 +33,7 @@ payments powered by Arkade.
 ## Getting Started
 
 ### Prerequisites
-- **Rust 1.90+**
+- **Rust 1.85+**
 
 ### Installation
 Clone the repository:
