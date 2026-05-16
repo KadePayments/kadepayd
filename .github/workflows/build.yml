@@ -1,4 +1,4 @@
-name: Build
+name: kadepayd CI
 on:
   push:
     branches:

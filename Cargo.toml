@@ -2,6 +2,7 @@
 name = "kadepayd"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85.0"
 
 [dependencies]
 tokio = { version = "1.52.1", features = ["full"] }
