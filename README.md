@@ -45,23 +45,23 @@ cd kadepayd
 ```
 
 #### Deployment Environment Setup:
-There two ways to setup the deployment environment 
+There two ways to set up the deployment environment 
 
 1. Environment variables (Recommended for production)
 
-    | Variable              | Description                                                                                                     |
-    |-----------------------|-----------------------------------------------------------------------------------------------------------------|
-    | KADEPAY_HOST          | The IP address of the host machine, set automatically in is not defined. Use this to explicitly set the host IP |
-    | KADEPAY_INVOICES_PORT | The port exposing KadePay invoices service                                                                      |
-    | KADEPAY_DB_URL        | The URL for the PostgreSQL database to use for data storage                                                     |
-    | KADEPAY_DB_USER       | The username for the PostgreSQL database                                                                        |
-    | KADEPAY_DB_NAME       | The PostgreSQL database name                                                                                    |
-    | KADEPAY_DB_PASSWORD   | The PostgresSQL database password                                                                               |
+    | Variable              | Description                                                                                                  |
+    |-----------------------|--------------------------------------------------------------------------------------------------------------|
+    | KADEPAY_HOST          | The IP address of the host machine, set automatically if not defined; use this to explicitly set the host IP |
+    | KADEPAY_INVOICES_PORT | The port exposing KadePay invoices service                                                                   |
+    | KADEPAY_DB_URL        | The URL for the PostgreSQL database to use for data storage                                                  |
+    | KADEPAY_DB_USER       | The username for the PostgreSQL database                                                                     |
+    | KADEPAY_DB_NAME       | The PostgreSQL database name                                                                                 |
+    | KADEPAY_DB_PASSWORD   | The PostgreSQL database password                                                                             |
 
 2. Create a `.secrets` file (For testing and development)
 
     **Syntax**
-    ```
+    ```dotenv
     kadepay_db_url=localhost
     kadepay_db_user=postgres
     kadepay_db_password=kade_db_password

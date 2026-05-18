@@ -27,7 +27,7 @@ impl Storage {
             (
                 format!(
                     "host={} user={} password={} dbname={}",
-                    config.kadepay_db_url,
+                    config.kadepay_db_host,
                     config.kadepay_db_user,
                     config.kadepay_db_password,
                     config.kadepay_db_name
