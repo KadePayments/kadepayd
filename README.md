@@ -49,14 +49,15 @@ There two ways to set up the deployment environment
 
 1. Environment variables (Recommended for production)
 
-    | Variable              | Description                                                                                                  |
-    |-----------------------|--------------------------------------------------------------------------------------------------------------|
-    | KADEPAY_HOST          | The IP address of the host machine, set automatically if not defined; use this to explicitly set the host IP |
-    | KADEPAY_INVOICES_PORT | The port exposing KadePay invoices service                                                                   |
-    | KADEPAY_DB_URL        | The URL for the PostgreSQL database to use for data storage                                                  |
-    | KADEPAY_DB_USER       | The username for the PostgreSQL database                                                                     |
-    | KADEPAY_DB_NAME       | The PostgreSQL database name                                                                                 |
-    | KADEPAY_DB_PASSWORD   | The PostgreSQL database password                                                                             |
+    | Variable                | Description                                                                                                                   |
+    |-------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+    | `KADEPAY_HOST`          | The IP address of the host machine, set automatically if not defined; use this to explicitly set the host IP                  |
+    | `KADEPAY_INVOICES_PORT` | The port exposing KadePay invoices service                                                                                    |
+    | `KADEPAY_DB_HOST`       | The IP address of the host of the PostgreSQL database to use for data storage; use this as an alternative to `KADEPAY_DB_URL` |
+    | `KADEPAY_DB_URL`        | The URL for the PostgreSQL database to use for data storage; use this as an alternative to `KADEPAY_DB_HOST`                  |
+    | `KADEPAY_DB_USER`       | The username for the PostgreSQL database                                                                                      |
+    | `KADEPAY_DB_NAME`       | The PostgreSQL database name                                                                                                  |
+    | `KADEPAY_DB_PASSWORD`   | The PostgreSQL database password                                                                                              |
 
 2. Create a `.secrets` file (For testing and development)
 
