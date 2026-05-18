@@ -27,8 +27,6 @@ impl Config {
             Err(_) => panic!("Invalid server url: {}", server_url),
         };
 
-        let mut db_host: String = "".to_string();
-        let mut db_url: String = "".to_string();
         let db_host_option = env::var("KADEPAY_DB_HOST")
             .ok()
             .or_else(|| local_secrets.get("kadepay_db_host").cloned());
@@ -36,12 +34,12 @@ impl Config {
             .ok()
             .or_else(|| local_secrets.get("kadepay_db_url").cloned());
 
-        if db_host_option == None && db_url_option == None {
+        if db_host_option.is_none() && db_url_option.is_none() {
             panic!("Database host or url must be set");
-        } else {
-            db_host = db_host_option.unwrap_or_else(|| db_host);
-            db_url = db_url_option.unwrap_or_else(|| db_url);
         }
+
+        let db_host = db_host_option.unwrap_or_default();
+        let db_url = db_url_option.unwrap_or_default();
 
         let db_user = env::var("KADEPAY_DB_USER")
             .ok()
@@ -54,7 +52,7 @@ impl Config {
         let db_name = env::var("KADEPAY_DB_NAME")
             .ok()
             .or_else(|| local_secrets.get("kadepay_db_name").cloned())
-            .expect("Missing KADEPAY_DB_NAME environment variable or kadepy_db_name in secrets");
+            .expect("Missing KADEPAY_DB_NAME environment variable or kadepay_db_name in secrets");
 
         Config {
             kadepay_invoices_server_addr,
