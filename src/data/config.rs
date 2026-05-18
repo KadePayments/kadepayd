@@ -11,22 +11,22 @@ pub struct Config {
 impl Config {
     pub fn new() -> Self {
         let local_secrets = read_local_secrets();
-        let db_url = env::var("DB_URL")
+        let db_url = env::var("KADEPAY_DB_URL")
             .ok()
-            .or_else(|| local_secrets.get("db_url").cloned())
-            .expect("Missing DB_URL environment variable or db_url in secrets");
-        let db_user = env::var("DB_USER")
+            .or_else(|| local_secrets.get("kadepay_db_url").cloned())
+            .expect("Missing KADEPAY_DB_URL environment variable or kadepay_db_url in secrets");
+        let db_user = env::var("KADEPAY_DB_USER")
             .ok()
-            .or_else(|| local_secrets.get("db_user").cloned())
-            .expect("Missing DB_USER environment variable or db_user in secrets");
-        let db_password = env::var("DB_PASSWORD")
+            .or_else(|| local_secrets.get("kadepay_db_user").cloned())
+            .expect("Missing KADEPAY_DB_USER environment variable or kadepay_db_user in secrets");
+        let db_password = env::var("KADEPAY_DB_PASSWORD")
             .ok()
-            .or_else(|| local_secrets.get("db_password").cloned())
-            .expect("Missing DB_PASSWORD environment variable or db_password in secrets");
-        let db_name = env::var("DB_NAME")
+            .or_else(|| local_secrets.get("kadepay_db_password").cloned())
+            .expect("Missing KADEPAY_DB_PASSWORD environment variable or kadepay_db_password in secrets");
+        let db_name = env::var("KADEPAY_DB_NAME")
             .ok()
-            .or_else(|| local_secrets.get("db_name").cloned())
-            .expect("Missing DB_NAME environment variable or db_name in secrets");
+            .or_else(|| local_secrets.get("kadepay_db_name").cloned())
+            .expect("Missing KADEPAY_DB_NAME environment variable or kadepy_db_name in secrets");
         Self {
             db_url,
             db_user,

@@ -7,8 +7,8 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Config {
-        let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
-        let port = env::var("PORT").unwrap_or_else(|_| "50051".to_string());
+        let host = env::var("KADEPAY_URL").unwrap_or_else(|_| "0.0.0.0".to_string());
+        let port = env::var("KADEPAY_PORT").unwrap_or_else(|_| "50051".to_string());
         let server_url = format!("{}:{}", host, port);
         let kade_invoice_server_addr = match server_url.parse::<SocketAddr>() {
             Ok(addr) => addr,
