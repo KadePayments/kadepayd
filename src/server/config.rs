@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use std::{env, fs};
 
 pub struct Config {
-    pub kadepay_invoice_server_addr: SocketAddr,
+    pub kadepay_invoices_server_addr: SocketAddr,
     pub kadepay_db_url: String,
     pub kadepay_db_user: String,
     pub kadepay_db_password: String,
@@ -14,10 +14,13 @@ impl Config {
     pub fn new() -> Config {
         let local_secrets = read_local_secrets();
 
-        let host = env::var("KADEPAY_URL").unwrap_or_else(|_| "0.0.0.0".to_string());
-        let port = env::var("KADEPAY_PORT").unwrap_or_else(|_| "50051".to_string());
+        let host = env::var("KADEPAY_HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
+        let port = env::var("KADEPAY_INVOICES_PORT")
+            .ok()
+            .or_else(|| local_secrets.get("kadepay_invoices_port").cloned())
+            .expect("Missing KADEPAY_INVOICES_PORT environment variable or kadepay_invoices_port in secrets");
         let server_url = format!("{}:{}", host, port);
-        let kade_invoice_server_addr = match server_url.parse::<SocketAddr>() {
+        let kadepay_invoices_server_addr = match server_url.parse::<SocketAddr>() {
             Ok(addr) => addr,
             Err(_) => panic!("Invalid server url: {}", server_url),
         };
@@ -40,7 +43,7 @@ impl Config {
             .expect("Missing KADEPAY_DB_NAME environment variable or kadepy_db_name in secrets");
 
         Config {
-            kadepay_invoice_server_addr: kade_invoice_server_addr,
+            kadepay_invoices_server_addr,
             kadepay_db_url: db_url,
             kadepay_db_user: db_user,
             kadepay_db_password: db_password,
