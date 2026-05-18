@@ -1,4 +1,5 @@
 pub mod data;
+mod server;
 pub mod services;
 
 pub mod invoice {

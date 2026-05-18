@@ -34,20 +34,47 @@ payments powered by Arkade.
 
 ### Prerequisites
 - **Rust 1.85+**
+- **PostgreSQL 18.2+**
 
 ### Installation
-Clone the repository:
+
+#### Clone the repository:
 ```bash
 git clone https://github.com/KadePayments/kadepayd.git
 cd kadepayd
 ```
 
-Build the project:
+#### Deployment Environment Setup:
+There two ways to set up the deployment environment 
+
+1. Environment variables (Recommended for production)
+
+    | Variable                | Description                                                                                                                   |
+    |-------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+    | `KADEPAY_HOST`          | The IP address of the host machine, set automatically if not defined; use this to explicitly set the host IP                  |
+    | `KADEPAY_INVOICES_PORT` | The port exposing KadePay invoices service                                                                                    |
+    | `KADEPAY_DB_HOST`       | The IP address of the host of the PostgreSQL database to use for data storage; use this as an alternative to `KADEPAY_DB_URL` |
+    | `KADEPAY_DB_URL`        | The URL for the PostgreSQL database to use for data storage; use this as an alternative to `KADEPAY_DB_HOST`                  |
+    | `KADEPAY_DB_USER`       | The username for the PostgreSQL database                                                                                      |
+    | `KADEPAY_DB_NAME`       | The PostgreSQL database name                                                                                                  |
+    | `KADEPAY_DB_PASSWORD`   | The PostgreSQL database password                                                                                              |
+
+2. Create a `.secrets` file (For testing and development)
+
+    **Syntax**
+    ```dotenv
+    kadepay_db_url=localhost
+    kadepay_db_user=postgres
+    kadepay_db_password=kade_db_password
+    kadepay_db_name=postgres
+    kadepay_invoices_port=50051
+    ```
+#### Build the project:
 ```bash
 cargo build
 ```
 
-Run the daemon:
+#### Run the daemon:
 ```bash
 cargo run --package kadepayd --bin kadepayd
 ```

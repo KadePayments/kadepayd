@@ -4,7 +4,6 @@ use rust_decimal::Decimal;
 use tokio_postgres::Row;
 use uuid::Uuid;
 
-mod config;
 pub mod errors;
 pub mod storage;
 

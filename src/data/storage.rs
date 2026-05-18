@@ -1,5 +1,5 @@
-use crate::data::config::Config;
 use crate::data::errors::StorageError;
+use crate::server::config::Config;
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use native_tls::TlsConnector;
@@ -27,7 +27,10 @@ impl Storage {
             (
                 format!(
                     "host={} user={} password={} dbname={}",
-                    config.db_url, config.db_user, config.db_password, config.db_name
+                    config.kadepay_db_host,
+                    config.kadepay_db_user,
+                    config.kadepay_db_password,
+                    config.kadepay_db_name
                 ),
                 None,
             )

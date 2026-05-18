@@ -14,7 +14,7 @@ impl Engine {
         let invoice_service = KadeInvoiceService::new(storage);
         Server::builder()
             .add_service(InvoiceServiceServer::new(invoice_service))
-            .serve(server_config.kade_invoice_server_addr)
+            .serve(server_config.kadepay_invoices_server_addr)
             .await?;
         Ok(())
     }
