@@ -63,12 +63,11 @@ There two ways to set up the deployment environment
 
     **Syntax**
     ```dotenv
-    kadepay_db_url=localhost
-    kadepay_db_user=postgres
-    kadepay_db_password=kade_db_password
-    kadepay_db_name=postgres
-    kadepay_invoices_port=50051
-    ```
+    KADEPAY_DB_HOST=localhost
+    KADEPAY_DB_USER=postgres
+    KADEPAY_DB_PASSWORD=kade_db_password
+    KADEPAY_DB_NAME=postgres
+    KADEPAY_INVOICES_PORT=50051    ```
 #### Build the project:
 ```bash
 cargo build
