@@ -67,7 +67,8 @@ There two ways to set up the deployment environment
     KADEPAY_DB_USER=postgres
     KADEPAY_DB_PASSWORD=kadepay_db_password
     KADEPAY_DB_NAME=postgres
-    KADEPAY_INVOICES_PORT=50051    ```
+    KADEPAY_INVOICES_PORT=50051    
+   ```
 #### Build the project:
 ```bash
 cargo build
