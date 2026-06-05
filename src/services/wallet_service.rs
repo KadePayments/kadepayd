@@ -61,8 +61,12 @@ impl WalletService for KadeWalletService {
         match self.storage.query_one(Self::INSERT, &[&pub_key]).await {
             Ok(row) => Ok(Response::new(NewWalletResponse::from_row(row))),
             Err(error) => {
-                eprintln!("{:?}", error);
-                Err(Status::internal("Internal server error"))
+                if error.message.contains("duplicate key") || error.message.contains("23505") {
+                    Err(Status::already_exists("Pubkey already exists"))
+                } else {
+                    eprintln!("{:?}", error);
+                    Err(Status::internal("Internal server error"))
+                }
             }
         }
     }

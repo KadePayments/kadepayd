@@ -91,8 +91,14 @@ impl InvoiceService for KadeInvoiceService {
         {
             Ok(value) => value,
             Err(error) => {
-                eprintln!("{:?}", error);
-                return Err(Status::internal("Internal server error"));
+                if error.message.contains("duplicate key") || error.message.contains("23505") {
+                    return Err(Status::already_exists(
+                        "Invoice with given address already exists",
+                    ));
+                } else {
+                    eprintln!("{:?}", error);
+                    return Err(Status::internal("Internal server error"));
+                }
             }
         };
         Ok(Response::new(NewInvoiceResponse::from_row(invoice_row)))
