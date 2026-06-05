@@ -2,20 +2,22 @@ use kadepayd::data::storage::Storage;
 use kadepayd::invoice::NewInvoiceRequest;
 use kadepayd::invoice::invoice_service_server::InvoiceService;
 use kadepayd::services::invoice_service::KadeInvoiceService;
+use std::sync::Arc;
 use tonic::Request;
 
 #[tokio::test]
 async fn should_create_an_invoice_successfully() {
-    let storage = Storage::new(true).await.expect("storage creation failed");
+    let storage = Arc::new(Storage::new(true).await.expect("storage creation failed"));
 
     storage
         .init(&[KadeInvoiceService::CREATE_TABLE])
         .await
-        .expect("storage init failed");
+        .expect("storage initialization failed");
 
-    let service = KadeInvoiceService::new(storage);
+    let invoice_service = KadeInvoiceService::new(storage);
 
     let invoice_req = NewInvoiceRequest {
+        pub_key_id: "c40f89d6-518f-4d9b-9c62-45c2cea7edc5".to_string(),
         network: "Arkade".to_string(),
         currency_code: "BTC".to_string(),
         amount: "0.0034".to_string(),
@@ -24,12 +26,16 @@ async fn should_create_an_invoice_successfully() {
 
     let grpc_req = Request::new(invoice_req);
 
-    let new_invoice_res = service
+    let new_invoice_res = invoice_service
         .create_invoice(grpc_req)
         .await
-        .expect("new invoice failed")
+        .expect("failed to create new invoice")
         .into_inner();
 
+    assert_eq!(
+        new_invoice_res.pub_key_id,
+        "c40f89d6-518f-4d9b-9c62-45c2cea7edc5"
+    );
     assert_eq!(new_invoice_res.amount, "0.00340000");
     assert_eq!(new_invoice_res.description, "Create invoice on Arkade test");
     assert_eq!(new_invoice_res.network, "Arkade");

@@ -4,7 +4,7 @@ use std::path::Path;
 use std::{env, fs};
 
 pub struct Config {
-    pub(crate) kadepay_invoices_server_addr: SocketAddr,
+    pub(crate) kadepay_server_addr: SocketAddr,
     pub(crate) kadepay_db_host: String,
     pub(crate) kadepay_db_url: String,
     pub(crate) kadepay_db_user: String,
@@ -30,9 +30,9 @@ impl Config {
             .or_else(|| local_secrets.get(Self::KADEPAY_INVOICES_PORT_KEY).cloned())
             .expect("Missing KADEPAY_INVOICES_PORT in environment variables or secrets");
         let server_url = format!("{}:{}", host, port);
-        let kadepay_invoices_server_addr = match server_url.parse::<SocketAddr>() {
+        let kadepay_server_addr = match server_url.parse::<SocketAddr>() {
             Ok(addr) => addr,
-            Err(_) => panic!("Invalid server url: {}", server_url),
+            Err(_) => panic!("Invalid invoices server url: {}", server_url),
         };
 
         let db_host_option = env::var(Self::KADEPAY_DB_HOST_KEY)
@@ -63,7 +63,7 @@ impl Config {
             .expect("Missing KADEPAY_DB_NAME in environment variables or secrets");
 
         Config {
-            kadepay_invoices_server_addr,
+            kadepay_server_addr,
             kadepay_db_host: db_host,
             kadepay_db_url: db_url,
             kadepay_db_user: db_user,
