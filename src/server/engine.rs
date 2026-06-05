@@ -3,24 +3,33 @@ use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceServiceServer;
 use crate::server::config::Config;
 use crate::services::invoice_service::KadeInvoiceService;
+use crate::services::wallet_service::KadeWalletService;
+use crate::wallet::wallet_service_server::WalletServiceServer;
+use std::sync::Arc;
 use tonic::transport::Server;
 
 pub struct Engine;
 impl Engine {
     pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
         let server_config = Config::new();
-        let storage = Storage::new(false).await?;
+        let storage = Arc::new(Storage::new(false).await?);
         Self::init_storage(&storage).await?;
-        let invoice_service = KadeInvoiceService::new(storage);
+        let wallet_service = KadeWalletService::new(storage.clone());
+        let invoice_service = KadeInvoiceService::new(storage.clone());
+
         Server::builder()
             .add_service(InvoiceServiceServer::new(invoice_service))
-            .serve(server_config.kadepay_invoices_server_addr)
+            .add_service(WalletServiceServer::new(wallet_service))
+            .serve(server_config.kadepay_server_addr)
             .await?;
         Ok(())
     }
 
     async fn init_storage(storage: &Storage) -> Result<(), StorageError> {
-        let create_table_commands = [KadeInvoiceService::CREATE_TABLE];
+        let create_table_commands = [
+            KadeInvoiceService::CREATE_TABLE,
+            KadeWalletService::CREATE_TABLE,
+        ];
         storage.init(&create_table_commands).await
     }
 }

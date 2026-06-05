@@ -7,19 +7,21 @@ service InvoiceService {
 }
 
 message NewInvoiceRequest {
-    string network = 1;
-    string currency_code = 2;
-    string amount = 3;
-    string description = 4;
+    string pub_key_id = 1;
+    string network = 2;
+    string currency_code = 3;
+    string amount = 4;
+    string description = 5;
 }
 
 message NewInvoiceResponse {
     string id = 1;
-    string network = 2;
-    string currency_code = 3;
-    string amount = 4;
-    string address = 5;
-    int64 created_at = 6;
-    string description = 7;
-    string status = 8;
+    string pub_key_id = 2;
+    string network = 3;
+    string currency_code = 4;
+    string amount = 5;
+    string address = 6;
+    int64 created_at = 7;
+    string description = 8;
+    string status = 9;
 }

@@ -4,16 +4,19 @@ use crate::invoice::{NewInvoiceRequest, NewInvoiceResponse};
 use chrono::Utc;
 use rust_decimal::Decimal;
 use std::str::FromStr;
+use std::sync::Arc;
 use tonic::{Request, Response, Status};
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct KadeInvoiceService {
-    storage: Storage,
+    storage: Arc<Storage>,
 }
 
 impl KadeInvoiceService {
     pub const CREATE_TABLE: &'static str = "CREATE TABLE IF NOT EXISTS invoices (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    pub_key_id UUID NOT NULL,
     amount NUMERIC(24, 8) NOT NULL,
     currency_code VARCHAR(3) NOT NULL,
     network VARCHAR(20) NOT NULL,
@@ -23,6 +26,7 @@ impl KadeInvoiceService {
     created_at TIMESTAMP WITH TIME ZONE NOT NULL
     );";
     pub const INSERT: &'static str = "INSERT INTO invoices (
+    pub_key_id,
     amount,
     currency_code,
     network,
@@ -30,11 +34,11 @@ impl KadeInvoiceService {
     status,
     description,
     created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;";
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;";
     pub const SELECT_BY_ID: &'static str = "SELECT * FROM invoices WHERE id = $1;";
     pub const SELECT_BY_ADDRESS: &'static str = "SELECT * FROM invoices WHERE address = $1;";
 
-    pub fn new(storage: Storage) -> Self {
+    pub fn new(storage: Arc<Storage>) -> Self {
         Self { storage }
     }
 }
@@ -46,6 +50,12 @@ impl InvoiceService for KadeInvoiceService {
         request: Request<NewInvoiceRequest>,
     ) -> Result<Response<NewInvoiceResponse>, Status> {
         let invoice = request.into_inner();
+
+        let pub_key_id = match Uuid::from_str(invoice.pub_key_id.as_str()) {
+            Ok(id) => id,
+            Err(error) => return Err(Status::invalid_argument(error.to_string())),
+        };
+
         let address = if invoice.network == "Arkade" {
             "<ark1...>".to_string()
         } else {
@@ -67,6 +77,7 @@ impl InvoiceService for KadeInvoiceService {
             .query_one(
                 Self::INSERT,
                 &[
+                    &pub_key_id,
                     &amount,
                     &invoice.currency_code,
                     &invoice.network,

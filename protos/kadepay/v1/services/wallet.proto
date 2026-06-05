@@ -1,0 +1,15 @@
+syntax="proto3";
+
+package kadepay.v1.services.wallet;
+
+service WalletService {
+  rpc CreateWallet(NewWalletRequest) returns (NewWalletResponse) {};
+}
+
+message NewWalletRequest {
+  string pub_key = 1;
+}
+
+message NewWalletResponse {
+  string pub_key_id = 1;
+}
