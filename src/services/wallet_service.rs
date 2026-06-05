@@ -47,6 +47,10 @@ impl WalletService for KadeWalletService {
         let input = request.into_inner();
         let pub_key = input.pub_key;
 
+        if !pub_key.as_bytes().iter().all(|b| b.is_ascii_hexdigit()) {
+            return Err(Status::invalid_argument("Invalid pubkey"));
+        }
+
         let pub_key_size = pub_key.len() / 2;
         if pub_key_size != 33 {
             return Err(Status::invalid_argument(format!(
@@ -56,7 +60,10 @@ impl WalletService for KadeWalletService {
         }
         match self.storage.query_one(Self::INSERT, &[&pub_key]).await {
             Ok(row) => Ok(Response::new(NewWalletResponse::from_row(row))),
-            Err(err) => Err(Status::internal(format!("{:?}", err))),
+            Err(error) => {
+                eprintln!("{:?}", error);
+                Err(Status::internal("Internal server error"))
+            }
         }
     }
 }

@@ -90,7 +90,10 @@ impl InvoiceService for KadeInvoiceService {
             .await
         {
             Ok(value) => value,
-            Err(error) => return Err(Status::internal(error.message)),
+            Err(error) => {
+                eprintln!("{:?}", error);
+                return Err(Status::internal("Internal server error"));
+            }
         };
         Ok(Response::new(NewInvoiceResponse::from_row(invoice_row)))
     }

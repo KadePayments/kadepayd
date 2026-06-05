@@ -32,6 +32,10 @@ async fn should_create_an_invoice_successfully() {
         .expect("failed to create new invoice")
         .into_inner();
 
+    assert_eq!(
+        new_invoice_res.pub_key_id,
+        "c40f89d6-518f-4d9b-9c62-45c2cea7edc5"
+    );
     assert_eq!(new_invoice_res.amount, "0.00340000");
     assert_eq!(new_invoice_res.description, "Create invoice on Arkade test");
     assert_eq!(new_invoice_res.network, "Arkade");
