@@ -14,7 +14,7 @@ pub struct Config {
 
 impl Config {
     const KADEPAY_HOST_KEY: &'static str = "KADEPAY_HOST";
-    const KADEPAY_INVOICES_PORT_KEY: &'static str = "KADEPAY_INVOICES_PORT";
+    const KADEPAY_PORT_KEY: &'static str = "KADEPAY_PORT";
     const KADEPAY_DB_HOST_KEY: &'static str = "KADEPAY_DB_HOST";
     const KADEPAY_DB_URL_KEY: &'static str = "KADEPAY_DB_URL";
     const KADEPAY_DB_USER_KEY: &'static str = "KADEPAY_DB_USER";
@@ -25,10 +25,10 @@ impl Config {
         let local_secrets = read_local_secrets();
 
         let host = env::var(Self::KADEPAY_HOST_KEY).unwrap_or_else(|_| "0.0.0.0".to_string());
-        let port = env::var(Self::KADEPAY_INVOICES_PORT_KEY)
+        let port = env::var(Self::KADEPAY_PORT_KEY)
             .ok()
-            .or_else(|| local_secrets.get(Self::KADEPAY_INVOICES_PORT_KEY).cloned())
-            .expect("Missing KADEPAY_INVOICES_PORT in environment variables or secrets");
+            .or_else(|| local_secrets.get(Self::KADEPAY_PORT_KEY).cloned())
+            .expect("Missing KADEPAY_PORT in environment variables or secrets");
         let server_url = format!("{}:{}", host, port);
         let kadepay_server_addr = match server_url.parse::<SocketAddr>() {
             Ok(addr) => addr,
@@ -86,6 +86,11 @@ fn read_local_secrets() -> HashMap<String, String> {
         Ok(contents) => {
             for line in contents.lines() {
                 if line.is_empty() {
+                    continue;
+                }
+                let line = line.trim();
+                if line.starts_with("//") {
+                    // This is a comment, should be skipped
                     continue;
                 }
                 let Some((key, value)) = line.split_once("=") else {
