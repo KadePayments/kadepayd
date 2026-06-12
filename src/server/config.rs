@@ -88,8 +88,9 @@ fn read_local_secrets() -> HashMap<String, String> {
                 if line.is_empty() {
                     continue;
                 }
+                let line = line.trim();
                 if line.starts_with("//") {
-                    // This is a  comment, should be skipped
+                    // This is a comment, should be skipped
                     continue;
                 }
                 let Some((key, value)) = line.split_once("=") else {
