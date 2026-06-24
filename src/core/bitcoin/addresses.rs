@@ -1,4 +1,4 @@
-use bitcoin::bip32::{ChildNumber, Error, Xpub};
+use bitcoin::bip32::{ChildNumber, Xpub};
 use bitcoin::secp256k1::Secp256k1;
 use bitcoin::{Address, Network};
 use std::str::FromStr;
@@ -10,25 +10,12 @@ pub fn new_onchain_payment_address(
     network: Network,
 ) -> Result<Address, Status> {
     let secp = Secp256k1::new();
-    let path = match (
-        ChildNumber::from_normal_idx(0),
-        ChildNumber::from_normal_idx(prev_index),
-    ) {
-        (Ok(index), Ok(index1)) => [index, index1],
-        (Ok(index), Err(_)) => {
-            return Err(Status::invalid_argument(format!(
-                "Invalid child number: {}",
-                index
-            )));
-        }
-        (Err(_), Ok(index)) => {
-            return Err(Status::invalid_argument(format!(
-                "Invalid child number: {}",
-                index
-            )));
-        }
-        (Err(_), Err(_)) => return Err(Status::invalid_argument("Invalid child numbers")),
-    };
+    let account_index = ChildNumber::from_normal_idx(0)
+        .map_err(|_| Status::internal("Failed to create account index: 0"))?;
+    let child_index = ChildNumber::from_normal_idx(prev_index)
+        .map_err(|_| Status::internal(format!("Invalid child number: {}", prev_index)))?;
+    let path = [account_index, child_index];
+
     let parent_xpub = match Xpub::from_str(xpubkey.as_str()) {
         Ok(x_pub) => x_pub,
         Err(_) => return Err(Status::invalid_argument("Invalid xpubkey")),

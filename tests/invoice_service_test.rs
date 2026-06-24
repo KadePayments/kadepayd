@@ -1,5 +1,4 @@
-use bitcoin::bip32::Xpub;
-use bitcoin::{Address, Network, address};
+use bitcoin::{Address, Network};
 use kadepayd::data::storage::Storage;
 use kadepayd::invoice::NewInvoiceRequest;
 use kadepayd::invoice::invoice_service_server::InvoiceService;
@@ -7,6 +6,7 @@ use kadepayd::services::invoice_service::KadeInvoiceService;
 use kadepayd::services::wallet_service::KadeWalletService;
 use kadepayd::wallet::NewWalletRequest;
 use kadepayd::wallet::wallet_service_server::WalletService;
+use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
 use tonic::Request;
@@ -96,6 +96,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
     let invoice_service = KadeInvoiceService::new(storage, wallet);
 
     let mut prev_address = "".to_string();
+    let mut seen_addresses: HashSet<String> = HashSet::new();
 
     for _ in 0..16 {
         let invoice_req = NewInvoiceRequest {
@@ -134,6 +135,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
             new_invoice_res.address, prev_address,
             "expect the new invoice payment address to be different from the previous invoice payment address"
         );
+        assert!(seen_addresses.insert(new_invoice_res.address.clone()));
 
         let address = Address::from_str(&new_invoice_res.address).unwrap();
         assert!(address.is_valid_for_network(Network::Testnet));
@@ -174,6 +176,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
     let invoice_service = KadeInvoiceService::new(storage, wallet);
 
     let mut prev_address = "".to_string();
+    let mut seen_addresses: HashSet<String> = HashSet::new();
 
     for x_pub_key in wallets {
         let wallet_req = NewWalletRequest {
@@ -186,7 +189,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
             .expect("failed to create wallet")
             .into_inner();
 
-        for index in 0..16 {
+        for _ in 0..16 {
             let invoice_req = NewInvoiceRequest {
                 x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
                 chain: "Bitcoin".to_string(),
@@ -223,6 +226,8 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
                 new_invoice_res.address, prev_address,
                 "expect the new invoice payment address to be different from the previous invoice payment address"
             );
+
+            assert!(seen_addresses.insert(new_invoice_res.address.clone()));
             assert_eq!(new_invoice_res.status, "pending");
             assert!(new_invoice_res.created_at > 0);
 
