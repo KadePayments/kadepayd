@@ -3,7 +3,7 @@ GRPC localhost:50051/kadepay.v1.services.invoice.InvoiceService/CreateInvoice
 Content-Type: application/json
 
 {
-  "x_pub_key_id": "efd02ee1-9f57-48c9-b24c-cc7ae6d357b5",
+  "x_pub_key_id": "bf4d50aa-9de5-4136-b02a-afc279c32ff6",
   "chain": "Bitcoin",
   "network": "testnet",
   "currency_code": "BTC",

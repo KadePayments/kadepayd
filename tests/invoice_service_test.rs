@@ -92,7 +92,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
 
     let mut prev_address = "".to_string();
 
-    for _ in 0..16 {
+    for index in 0..16 {
         let invoice_req = NewInvoiceRequest {
             x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
             chain: "Bitcoin".to_string(),

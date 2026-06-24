@@ -21,7 +21,7 @@ impl KadeInvoiceService {
     pub const CREATE_TABLE: &'static str = "CREATE TABLE IF NOT EXISTS invoices (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     x_pub_key_id UUID NOT NULL,
-    child_key_index INT NOT NULL UNIQUE CHECK(child_key_index >= 0 AND child_key_index <= 2147483647),
+    child_key_index INT NOT NULL CHECK(child_key_index >= 0 AND child_key_index <= 2147483647),
     amount NUMERIC(24, 8) NOT NULL,
     currency_code VARCHAR(3) NOT NULL,
     chain VARCHAR(8) NOT NULL,
@@ -29,7 +29,8 @@ impl KadeInvoiceService {
     address VARCHAR(90) NOT NULL UNIQUE,
     status VARCHAR(10) NOT NULL,
     description VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT unique_parent_and_child UNIQUE (x_pub_key_id, child_key_index)
     );";
     pub const INSERT: &'static str = "INSERT INTO invoices (
     x_pub_key_id,
@@ -46,9 +47,11 @@ impl KadeInvoiceService {
     pub const SELECT_BY_ID: &'static str = "SELECT * FROM invoices WHERE id = $1;";
     pub const SELECT_BY_ADDRESS: &'static str = "SELECT * FROM invoices WHERE address = $1;";
 
-    pub const SELECT_MAX_CHILD_INDEX: &'static str = "SELECT MAX(child_key_index) FROM invoices;";
+    pub const SELECT_MAX_CHILD_INDEX_BY_WALLET: &'static str =
+        "SELECT MAX(child_key_index) FROM invoices WHERE x_pub_key_id = $1;";
 
-    pub const SELECT_CHILD_INDEX: &'static str = "SELECT child_key_index FROM invoices;";
+    pub const SELECT_CHILD_INDEX_BY_WALLET: &'static str =
+        "SELECT child_key_index FROM invoices WHERE x_pub_key_id = $1;";
 
     pub fn new(storage: Arc<Storage>, wallet: KadeWalletService) -> Self {
         Self { storage, wallet }
@@ -71,18 +74,23 @@ impl InvoiceService for KadeInvoiceService {
 
         let new_child_key_index = match self
             .storage
-            .query_one(Self::SELECT_MAX_CHILD_INDEX, &[])
+            .query_one(Self::SELECT_MAX_CHILD_INDEX_BY_WALLET, &[&x_pub_key_id])
             .await
         {
             Ok(prev_index_row) => {
                 let prev_index_as_option: Option<i32> = prev_index_row.get("max");
                 if let Some(prev_index) = prev_index_as_option {
-                    (prev_index + 1i32) as u32
+                    match prev_index.checked_add(1) {
+                        Some(prev_index) => prev_index as u32,
+                        None => {
+                            return Err(Status::resource_exhausted("Child key indices exhausted"));
+                        }
+                    }
                 } else {
                     0u32
                 }
             }
-            Err(_) => return Err(Status::not_found("Previous child index not found")),
+            Err(_) => return Err(Status::internal("Internal server error")),
         };
 
         let network = match Network::from_str(invoice.network.as_str()) {
@@ -98,8 +106,12 @@ impl InvoiceService for KadeInvoiceService {
         let address = if invoice.chain == "Arkade" {
             "<ark1...>".to_string()
         } else {
-            new_onchain_payment_address(account_x_pub_key, new_child_key_index, network).to_string()
+            new_onchain_payment_address(account_x_pub_key, new_child_key_index, network)?
+                .to_string()
         };
+
+        eprintln!("{}: {}", new_child_key_index, address);
+
         let status = "pending".to_string();
         let created_at = Utc::now();
         let amount = match Decimal::from_str(invoice.amount.as_str()) {
