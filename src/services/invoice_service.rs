@@ -79,15 +79,14 @@ impl InvoiceService for KadeInvoiceService {
         {
             Ok(prev_index_row) => {
                 let prev_index_as_option: Option<i32> = prev_index_row.get("max");
-                if let Some(prev_index) = prev_index_as_option {
-                    match prev_index.checked_add(1) {
-                        Some(prev_index) => prev_index as u32,
+                match prev_index_as_option {
+                    Some(prev_index) => match prev_index.checked_add(1) {
+                        Some(new_index) => new_index as u32,
                         None => {
                             return Err(Status::resource_exhausted("Child key indices exhausted"));
                         }
-                    }
-                } else {
-                    0u32
+                    },
+                    None => 0u32,
                 }
             }
             Err(_) => return Err(Status::internal("Internal server error")),
