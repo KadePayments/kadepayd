@@ -105,11 +105,13 @@ impl InvoiceService for KadeInvoiceService {
         let address = if invoice.chain == "Arkade" {
             "<ark1...>".to_string()
         } else {
-            new_onchain_payment_address(account_x_pub_key, new_child_key_index, network)?
-                .to_string()
+            new_onchain_payment_address(
+                account_x_pub_key.to_string(),
+                new_child_key_index,
+                network,
+            )?
+            .to_string()
         };
-
-        eprintln!("{}: {}", new_child_key_index, address);
 
         let status = "pending".to_string();
         let created_at = Utc::now();
