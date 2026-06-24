@@ -3,7 +3,9 @@ GRPC localhost:50051/kadepay.v1.services.invoice.InvoiceService/CreateInvoice
 Content-Type: application/json
 
 {
-  "network": "Arkade",
+  "x_pub_key_id": "bf4d50aa-9de5-4136-b02a-afc279c32ff6",
+  "chain": "Arkade",
+  "network": "testnet",
   "currency_code": "BTC",
   "amount": "4",
   "description": "Test invoice creation on Arkade"

@@ -2,5 +2,5 @@ GRPC localhost:50051/kadepay.v1.services.wallet.WalletService/CreateWallet
 Content-Type: application/json
 
 {
-  "pub_key": "038d03c224f037eabaaba23719821c909e6fb25c29510b130f2888ad5f863635b5"
+  "x_pub_key": "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55ntaF"
 }

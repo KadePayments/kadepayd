@@ -20,6 +20,7 @@ chrono = { version = "0.4.44", features = ["serde"] }
 rust_decimal = { version = "1.42.0", features = ["tokio-pg"] }
 uuid = "1.23.1"
 postgresql_embedded = "0.20.2"
+bitcoin = "0.32.10"
 
 [build-dependencies]
 tonic-prost-build = "0.14.6"

@@ -11,12 +11,13 @@ pub mod storage;
 impl NewInvoiceResponse {
     pub fn from_row(row: Row) -> Self {
         let id: Uuid = row.get("id");
-        let pub_key_id: Uuid = row.get("pub_key_id");
+        let x_pub_key_id: Uuid = row.get("x_pub_key_id");
         let created_at: DateTime<Utc> = row.get("created_at");
         let amount: Decimal = row.get("amount");
         Self {
             id: id.to_string(),
-            pub_key_id: pub_key_id.to_string(),
+            x_pub_key_id: x_pub_key_id.to_string(),
+            chain: row.get("chain"),
             amount: amount.to_string(),
             currency_code: row.get("currency_code"),
             network: row.get("network"),
@@ -30,9 +31,9 @@ impl NewInvoiceResponse {
 
 impl NewWalletResponse {
     pub fn from_row(row: Row) -> Self {
-        let pub_key_id: Uuid = row.get("id");
+        let x_pub_key_id: Uuid = row.get("id");
         Self {
-            pub_key_id: pub_key_id.to_string(),
+            x_pub_key_id: x_pub_key_id.to_string(),
         }
     }
 }
