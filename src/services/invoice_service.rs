@@ -1,6 +1,9 @@
+use crate::core::bitcoin::addresses::new_onchain_payment_address;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceService;
 use crate::invoice::{NewInvoiceRequest, NewInvoiceResponse};
+use crate::services::wallet_service::KadeWalletService;
+use bitcoin::Network;
 use chrono::Utc;
 use rust_decimal::Decimal;
 use std::str::FromStr;
@@ -11,14 +14,17 @@ use uuid::Uuid;
 #[derive(Debug)]
 pub struct KadeInvoiceService {
     storage: Arc<Storage>,
+    wallet: KadeWalletService,
 }
 
 impl KadeInvoiceService {
     pub const CREATE_TABLE: &'static str = "CREATE TABLE IF NOT EXISTS invoices (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    pub_key_id UUID NOT NULL,
+    x_pub_key_id UUID NOT NULL,
+    child_key_index INT NOT NULL UNIQUE CHECK(child_key_index >= 0 AND child_key_index <= 2147483647),
     amount NUMERIC(24, 8) NOT NULL,
     currency_code VARCHAR(3) NOT NULL,
+    chain VARCHAR(8) NOT NULL,
     network VARCHAR(20) NOT NULL,
     address VARCHAR(90) NOT NULL UNIQUE,
     status VARCHAR(10) NOT NULL,
@@ -26,20 +32,26 @@ impl KadeInvoiceService {
     created_at TIMESTAMP WITH TIME ZONE NOT NULL
     );";
     pub const INSERT: &'static str = "INSERT INTO invoices (
-    pub_key_id,
+    x_pub_key_id,
+    child_key_index,
     amount,
     currency_code,
+    chain,
     network,
     address,
     status,
     description,
     created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;";
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;";
     pub const SELECT_BY_ID: &'static str = "SELECT * FROM invoices WHERE id = $1;";
     pub const SELECT_BY_ADDRESS: &'static str = "SELECT * FROM invoices WHERE address = $1;";
 
-    pub fn new(storage: Arc<Storage>) -> Self {
-        Self { storage }
+    pub const SELECT_MAX_CHILD_INDEX: &'static str = "SELECT MAX(child_key_index) FROM invoices;";
+
+    pub const SELECT_CHILD_INDEX: &'static str = "SELECT child_key_index FROM invoices;";
+
+    pub fn new(storage: Arc<Storage>, wallet: KadeWalletService) -> Self {
+        Self { storage, wallet }
     }
 }
 
@@ -51,15 +63,42 @@ impl InvoiceService for KadeInvoiceService {
     ) -> Result<Response<NewInvoiceResponse>, Status> {
         let invoice = request.into_inner();
 
-        let pub_key_id = match Uuid::from_str(invoice.pub_key_id.as_str()) {
+        let x_pub_key_id = match Uuid::from_str(invoice.x_pub_key_id.as_str()) {
             Ok(id) => id,
             Err(error) => return Err(Status::invalid_argument(error.to_string())),
         };
+        let account_x_pub_key = self.wallet.get_wallet_x_pub_key(x_pub_key_id).await?;
 
-        let address = if invoice.network == "Arkade" {
+        let new_child_key_index = match self
+            .storage
+            .query_one(Self::SELECT_MAX_CHILD_INDEX, &[])
+            .await
+        {
+            Ok(prev_index_row) => {
+                let prev_index_as_option: Option<i32> = prev_index_row.get("max");
+                if let Some(prev_index) = prev_index_as_option {
+                    (prev_index + 1i32) as u32
+                } else {
+                    0u32
+                }
+            }
+            Err(_) => return Err(Status::not_found("Previous child index not found")),
+        };
+
+        let network = match Network::from_str(invoice.network.as_str()) {
+            Ok(network) => network,
+            Err(_) => {
+                return Err(Status::invalid_argument(format!(
+                    "Cannot parse network with invalid name: {}",
+                    invoice.network
+                )));
+            }
+        };
+
+        let address = if invoice.chain == "Arkade" {
             "<ark1...>".to_string()
         } else {
-            "<bc1q...>".to_string()
+            new_onchain_payment_address(account_x_pub_key, new_child_key_index, network).to_string()
         };
         let status = "pending".to_string();
         let created_at = Utc::now();
@@ -72,14 +111,17 @@ impl InvoiceService for KadeInvoiceService {
                 )));
             }
         };
+
         let invoice_row = match self
             .storage
             .query_one(
                 Self::INSERT,
                 &[
-                    &pub_key_id,
+                    &x_pub_key_id,
+                    &(new_child_key_index as i32),
                     &amount,
                     &invoice.currency_code,
+                    &invoice.chain,
                     &invoice.network,
                     &address,
                     &status,

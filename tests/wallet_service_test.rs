@@ -7,7 +7,7 @@ use tonic::{Code, Request};
 
 #[tokio::test]
 async fn should_create_watch_only_wallet_successfully() {
-    let pub_key = "038d03c224f037eabaaba23719821c909e6fb25c29510b130f2888ad5f863635b5".to_string();
+    let x_pub_key = "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55ntaF".to_string();
 
     let storage = Arc::new(Storage::new(true).await.expect("storage creation failed"));
 
@@ -18,7 +18,7 @@ async fn should_create_watch_only_wallet_successfully() {
 
     let wallet_service = KadeWalletService::new(storage);
 
-    let new_wallet_request = NewWalletRequest { pub_key };
+    let new_wallet_request = NewWalletRequest { x_pub_key };
 
     let grpc_request = Request::new(new_wallet_request);
 
@@ -28,13 +28,12 @@ async fn should_create_watch_only_wallet_successfully() {
         .expect("failed to create new wallet")
         .into_inner();
 
-    assert_eq!(!new_wallet_response.pub_key_id.is_empty(), true)
+    assert_eq!(!new_wallet_response.x_pub_key_id.is_empty(), true)
 }
 
 #[tokio::test]
 async fn should_fail_to_create_watch_only_wallet_on_invalid_pub_key() {
-    let pub_key = "03c224f037eabaaba23719821c909e6fb25c29510b130f2888ad5f863635b5".to_string();
-    let pub_key_size = pub_key.len();
+    let x_pub_key = "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55nt".to_string();
 
     let storage = Arc::new(Storage::new(true).await.expect("storage creation failed"));
 
@@ -45,7 +44,7 @@ async fn should_fail_to_create_watch_only_wallet_on_invalid_pub_key() {
 
     let wallet_service = KadeWalletService::new(storage);
 
-    let new_wallet_request = NewWalletRequest { pub_key };
+    let new_wallet_request = NewWalletRequest { x_pub_key };
 
     let grpc_request = Request::new(new_wallet_request);
 
@@ -56,8 +55,4 @@ async fn should_fail_to_create_watch_only_wallet_on_invalid_pub_key() {
         .expect("created new wallet");
 
     assert_eq!(new_wallet_response.code(), Code::InvalidArgument);
-    assert_eq!(
-        new_wallet_response.message(),
-        format!("PubKey must be 33 bytes: {}", pub_key_size / 2)
-    );
 }

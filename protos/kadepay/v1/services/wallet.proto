@@ -7,9 +7,9 @@ service WalletService {
 }
 
 message NewWalletRequest {
-  string pub_key = 1;
+  string x_pub_key = 1;
 }
 
 message NewWalletResponse {
-  string pub_key_id = 1;
+  string x_pub_key_id = 1;
 }

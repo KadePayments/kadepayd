@@ -5,6 +5,8 @@ mod data;
 mod server;
 mod services;
 
+mod core;
+
 pub mod invoice {
     tonic::include_proto!("kadepay.v1.services.invoice");
 }
