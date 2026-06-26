@@ -1,3 +1,4 @@
+use crate::data::errors::handle_storage_error;
 use crate::data::storage::Storage;
 use crate::wallet::wallet_service_server::WalletService;
 use crate::wallet::{NewWalletRequest, NewWalletResponse};
@@ -33,7 +34,7 @@ impl KadeWalletService {
                     Some(row) => row.get("x_pub_key"),
                     None => {
                         return Err(Status::not_found(format!(
-                            "No xpubkey for id: {} was found",
+                            "No x-pubkey for id: {} was found",
                             id
                         )));
                     }
@@ -54,23 +55,20 @@ impl WalletService for KadeWalletService {
         let input = request.into_inner();
         let x_pub_key = match Xpub::from_str(input.x_pub_key.as_str()) {
             Ok(x_pub) => x_pub,
-            Err(_) => return Err(Status::invalid_argument("Invalid X PubKey")),
+            Err(_) => return Err(Status::invalid_argument("Invalid x-pubkey")),
         };
 
-        match self
+        let wallet_row = match self
             .storage
             .query_one(Self::INSERT, &[&x_pub_key.to_string()])
             .await
         {
-            Ok(row) => Ok(Response::new(NewWalletResponse::from_row(row))),
+            Ok(row) => row,
             Err(error) => {
-                if error.message.contains("duplicate key") || error.message.contains("23505") {
-                    Err(Status::already_exists("Pubkey already exists"))
-                } else {
-                    eprintln!("{:?}", error);
-                    Err(Status::internal("Internal server error"))
-                }
+                let status = handle_storage_error(error, "Pubkey already exists");
+                return Err(status);
             }
-        }
+        };
+        Ok(Response::new(NewWalletResponse::from_row(wallet_row)))
     }
 }
