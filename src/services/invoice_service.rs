@@ -1,4 +1,5 @@
 use crate::core::bitcoin::addresses::new_onchain_payment_address;
+use crate::data::errors::handle_storage_error;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceService;
 use crate::invoice::{NewInvoiceRequest, NewInvoiceResponse};
@@ -146,15 +147,9 @@ impl InvoiceService for KadeInvoiceService {
         {
             Ok(value) => value,
             Err(error) => {
-                return if error.message.contains("duplicate key") || error.message.contains("23505")
-                {
-                    Err(Status::already_exists(
-                        "Invoice with given address already exists",
-                    ))
-                } else {
-                    eprintln!("{:?}", error);
-                    Err(Status::internal("Internal server error"))
-                };
+                let status =
+                    handle_storage_error(error, "Invoice with given address already exists");
+                return Err(status);
             }
         };
         Ok(Response::new(NewInvoiceResponse::from_row(invoice_row)))

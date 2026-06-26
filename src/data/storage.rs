@@ -35,22 +35,15 @@ impl Storage {
                 None,
             )
         };
-        let tls_connector = TlsConnector::builder().build().map_err(|error| {
-            StorageError::new(format!("Failed to build TLS connector: {}", error))
-        })?;
+        let tls_connector = TlsConnector::builder().build()?;
         let tls = MakeTlsConnector::new(tls_connector);
         let pool_connection_manager =
-            PostgresConnectionManager::new_from_stringlike(connection_string, tls).map_err(
-                |error| StorageError::new(format!("Failed to create pool connection: {}", error)),
-            )?;
+            PostgresConnectionManager::new_from_stringlike(connection_string, tls)?;
         let pool = Pool::builder()
             .max_size(Self::MAX_CONNECTIONS)
             .min_idle(Self::MIN_IDLE_CONNECTIONS)
             .build(pool_connection_manager)
-            .await
-            .map_err(|error| {
-                StorageError::new(format!("Failed to build connection pool: {}", error))
-            })?;
+            .await?;
         Ok(Storage { pool, db_process })
     }
 
@@ -59,41 +52,23 @@ impl Storage {
         let settings = Settings::new();
         let mut postgresql = PostgreSQL::new(settings);
 
-        postgresql
-            .setup()
-            .await
-            .map_err(|error| StorageError::new(format!("Failed to setup database: {}", error)))?;
-        postgresql
-            .start()
-            .await
-            .map_err(|error| StorageError::new(format!("Failed to start database: {}", error)))?;
+        postgresql.setup().await?;
+        postgresql.start().await?;
 
         let database_name = "kade_test_db";
-        postgresql
-            .create_database(database_name)
-            .await
-            .map_err(|error| StorageError::new(format!("Failed to create database: {}", error)))?;
+        postgresql.create_database(database_name).await?;
         let connection_string = postgresql.settings().url(database_name);
         Ok((connection_string, postgresql))
     }
 
     pub async fn init(&self, create_table_commands: &[&str]) -> Result<(), StorageError> {
-        let mut connection = self.pool.get().await.map_err(|error| {
-            StorageError::new(format!("Error connecting to database: {}", error))
-        })?;
-        let transaction = connection.transaction().await.map_err(|error| {
-            StorageError::new(format!("Failed to start transaction: {}", error))
-        })?;
+        let mut connection = self.pool.get().await?;
+        let transaction = connection.transaction().await?;
 
         for create_table_sql in create_table_commands {
-            transaction
-                .batch_execute(&create_table_sql)
-                .await
-                .map_err(|error| StorageError::new(format!("Failed to create table: {}", error)))?;
+            transaction.batch_execute(&create_table_sql).await?;
         }
-        transaction.commit().await.map_err(|error| {
-            StorageError::new(format!("Failed to commit transaction: {}", error))
-        })?;
+        transaction.commit().await?;
         Ok(())
     }
 
@@ -102,24 +77,9 @@ impl Storage {
         sql: &str,
         params: &[&(dyn ToSql + Sync)],
     ) -> Result<Vec<Row>, StorageError> {
-        let connection = self.pool.get().await.map_err(|error| {
-            StorageError::new(format!("Error connecting to database: {}", error))
-        })?;
-        let statement = connection.prepare(sql).await.map_err(|error| {
-            StorageError::new(format!(
-                "Error preparing statement from database: {}",
-                error
-            ))
-        })?;
-        let rows = connection
-            .query(&statement, params)
-            .await
-            .map_err(|error| {
-                StorageError::new(format!(
-                    "Error executing statement from database: {}",
-                    error
-                ))
-            })?;
+        let connection = self.pool.get().await?;
+        let statement = connection.prepare(sql).await?;
+        let rows = connection.query(&statement, params).await?;
         Ok(rows)
     }
 
@@ -128,24 +88,9 @@ impl Storage {
         sql: &str,
         params: &[&(dyn ToSql + Sync)],
     ) -> Result<Row, StorageError> {
-        let connection = self.pool.get().await.map_err(|error| {
-            StorageError::new(format!("Error connecting to database: {}", error))
-        })?;
-        let statement = connection.prepare(sql).await.map_err(|error| {
-            StorageError::new(format!(
-                "Error preparing statement from database: {}",
-                error
-            ))
-        })?;
-        let row = connection
-            .query_one(&statement, params)
-            .await
-            .map_err(|error| {
-                StorageError::new(format!(
-                    "Error executing statement from database: {}",
-                    error
-                ))
-            })?;
+        let connection = self.pool.get().await?;
+        let statement = connection.prepare(sql).await?;
+        let row = connection.query_one(&statement, params).await?;
         Ok(row)
     }
 
@@ -154,24 +99,9 @@ impl Storage {
         sql: &str,
         params: &[&(dyn ToSql + Sync)],
     ) -> Result<u64, StorageError> {
-        let connection = self.pool.get().await.map_err(|error| {
-            StorageError::new(format!("Error connecting to database: {}", error))
-        })?;
-        let statement = connection.prepare(sql).await.map_err(|error| {
-            StorageError::new(format!(
-                "Error preparing statement from database: {}",
-                error
-            ))
-        })?;
-        let number_of_rows = connection
-            .execute(&statement, params)
-            .await
-            .map_err(|error| {
-                StorageError::new(format!(
-                    "Error executing statement from database: {}",
-                    error
-                ))
-            })?;
+        let connection = self.pool.get().await?;
+        let statement = connection.prepare(sql).await?;
+        let number_of_rows = connection.execute(&statement, params).await?;
         Ok(number_of_rows)
     }
 }

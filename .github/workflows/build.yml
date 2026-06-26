@@ -29,6 +29,8 @@ jobs:
         run: sudo apt-get install protobuf-compiler
       - uses: actions/checkout@v6
       - name: Tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: cargo test
 
   check-format:
