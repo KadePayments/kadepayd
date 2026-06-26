@@ -16,7 +16,14 @@ impl std::error::Error for StorageError {}
 
 impl Display for StorageError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.to_string())
+        match &self {
+            StorageError::DatabaseError(error) => write!(f, "Database error: {}", error),
+            StorageError::PoolTimeoutError => write!(f, "Pool connection timed out"),
+            StorageError::TLSError(error) => write!(f, "TLS error: {}", error),
+            StorageError::EmbeddedDatabaseError(error) => {
+                write!(f, "Embedded database error: {}", error)
+            }
+        }
     }
 }
 
@@ -50,10 +57,11 @@ impl From<postgresql_embedded::Error> for StorageError {
 pub fn handle_storage_error(error: StorageError, message: &str) -> Status {
     match error {
         StorageError::DatabaseError(error) => {
-            eprintln!("{}", error);
             if error.code() == Some(&SqlState::UNIQUE_VIOLATION) {
+                eprintln!("{}", message);
                 return Status::already_exists(message);
             }
+            eprintln!("{}", error);
             Status::internal("Internal server error")
         }
         StorageError::PoolTimeoutError => {
