@@ -5,7 +5,7 @@ use std::str::FromStr;
 use tonic::Status;
 
 pub fn new_onchain_payment_address(
-    xpubkey: String,
+    x_pub_key: String,
     prev_index: u32,
     network: Network,
 ) -> Result<Address, Status> {
@@ -16,7 +16,7 @@ pub fn new_onchain_payment_address(
         .map_err(|_| Status::internal(format!("Invalid child number: {}", prev_index)))?;
     let path = [account_index, child_index];
 
-    let parent_xpub = match Xpub::from_str(xpubkey.as_str()) {
+    let parent_xpub = match Xpub::from_str(x_pub_key.as_str()) {
         Ok(x_pub) => x_pub,
         Err(_) => return Err(Status::invalid_argument("Invalid xpubkey")),
     };
