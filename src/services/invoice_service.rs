@@ -65,18 +65,36 @@ impl InvoiceService for KadeInvoiceService {
         &self,
         request: Request<NewInvoiceRequest>,
     ) -> Result<Response<NewInvoiceResponse>, Status> {
+        let mut connection = match self.storage.pool.get().await {
+            Ok(connection) => connection,
+            Err(error) => {
+                eprintln!("{:?}", error);
+                return Err(Status::internal("Internal server error"));
+            }
+        };
+        let transaction = match connection.transaction().await {
+            Ok(transaction) => transaction,
+            Err(err) => {
+                eprintln!("{:?}", err);
+                return Err(Status::internal("Internal server error"));
+            }
+        };
+
         let invoice = request.into_inner();
 
         let x_pub_key_id = match Uuid::from_str(invoice.x_pub_key_id.as_str()) {
             Ok(id) => id,
             Err(error) => return Err(Status::invalid_argument(error.to_string())),
         };
-        let account_x_pub_key = self.wallet.get_wallet_x_pub_key(x_pub_key_id).await?;
+        let account_x_pub_key =
+            KadeWalletService::get_x_pub_key_from_db_tx(&transaction, x_pub_key_id).await?;
 
-        let new_child_key_index = match self
-            .storage
-            .query_one(Self::SELECT_MAX_CHILD_INDEX_BY_WALLET, &[&x_pub_key_id])
-            .await
+        let new_child_key_index = match Storage::tx_query_one(
+            &transaction,
+            Self::SELECT_MAX_CHILD_INDEX_BY_WALLET,
+            &[&x_pub_key_id],
+        )
+        .await
         {
             Ok(prev_index_row) => {
                 let prev_index_as_option: Option<i32> = prev_index_row.get("max");
@@ -90,7 +108,10 @@ impl InvoiceService for KadeInvoiceService {
                     None => 0u32,
                 }
             }
-            Err(_) => return Err(Status::internal("Internal server error")),
+            Err(e) => {
+                let status = handle_storage_error(e, "");
+                return Err(status);
+            }
         };
 
         let network = match Network::from_str(invoice.network.as_str()) {
@@ -126,24 +147,23 @@ impl InvoiceService for KadeInvoiceService {
             }
         };
 
-        let invoice_row = match self
-            .storage
-            .query_one(
-                Self::INSERT,
-                &[
-                    &x_pub_key_id,
-                    &(new_child_key_index as i32),
-                    &amount,
-                    &invoice.currency_code,
-                    &invoice.chain,
-                    &invoice.network,
-                    &address,
-                    &status,
-                    &invoice.description,
-                    &created_at,
-                ],
-            )
-            .await
+        let invoice_row = match Storage::tx_query_one(
+            &transaction,
+            Self::INSERT,
+            &[
+                &x_pub_key_id,
+                &(new_child_key_index as i32),
+                &amount,
+                &invoice.currency_code,
+                &invoice.chain,
+                &invoice.network,
+                &address,
+                &status,
+                &invoice.description,
+                &created_at,
+            ],
+        )
+        .await
         {
             Ok(value) => value,
             Err(error) => {
@@ -152,6 +172,14 @@ impl InvoiceService for KadeInvoiceService {
                 return Err(status);
             }
         };
+        match Storage::tx_commit(transaction).await {
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("{:?}", error);
+                let status = handle_storage_error(error, "");
+                return Err(status);
+            }
+        }
         Ok(Response::new(NewInvoiceResponse::from_row(invoice_row)))
     }
 }

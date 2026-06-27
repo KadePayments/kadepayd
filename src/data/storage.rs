@@ -5,8 +5,8 @@ use bb8_postgres::PostgresConnectionManager;
 use native_tls::TlsConnector;
 use postgres_native_tls::MakeTlsConnector;
 use postgresql_embedded::{PostgreSQL, Settings};
-use tokio_postgres::Row;
 use tokio_postgres::types::ToSql;
+use tokio_postgres::{Row, Transaction};
 
 #[derive(Debug)]
 pub struct Storage {
@@ -94,6 +94,17 @@ impl Storage {
         Ok(row)
     }
 
+    pub async fn query_opt(
+        &self,
+        sql: &str,
+        params: &[&(dyn ToSql + Sync)],
+    ) -> Result<Option<Row>, StorageError> {
+        let connection = self.pool.get().await?;
+        let statement = connection.prepare(sql).await?;
+        let row = connection.query_opt(&statement, params).await?;
+        Ok(row)
+    }
+
     pub async fn execute(
         &self,
         sql: &str,
@@ -103,5 +114,50 @@ impl Storage {
         let statement = connection.prepare(sql).await?;
         let number_of_rows = connection.execute(&statement, params).await?;
         Ok(number_of_rows)
+    }
+
+    pub async fn tx_query(
+        tx: &Transaction<'_>,
+        sql: &str,
+        params: &[&(dyn ToSql + Sync)],
+    ) -> Result<Vec<Row>, StorageError> {
+        let statement = tx.prepare(sql).await?;
+        let rows = tx.query(&statement, params).await?;
+        Ok(rows)
+    }
+
+    pub async fn tx_query_one(
+        tx: &Transaction<'_>,
+        sql: &str,
+        params: &[&(dyn ToSql + Sync)],
+    ) -> Result<Row, StorageError> {
+        let statement = tx.prepare(sql).await?;
+        let row = tx.query_one(&statement, params).await?;
+        Ok(row)
+    }
+
+    pub async fn tx_query_opt(
+        tx: &Transaction<'_>,
+        sql: &str,
+        params: &[&(dyn ToSql + Sync)],
+    ) -> Result<Option<Row>, StorageError> {
+        let statement = tx.prepare(sql).await?;
+        let row = tx.query_opt(&statement, params).await?;
+        Ok(row)
+    }
+
+    pub async fn tx_execute(
+        tx: &Transaction<'_>,
+        sql: &str,
+        params: &[&(dyn ToSql + Sync)],
+    ) -> Result<u64, StorageError> {
+        let statement = tx.prepare(sql).await?;
+        let number_of_rows = tx.execute(&statement, params).await?;
+        Ok(number_of_rows)
+    }
+
+    pub async fn tx_commit(tx: Transaction<'_>) -> Result<(), StorageError> {
+        tx.commit().await?;
+        Ok(())
     }
 }
