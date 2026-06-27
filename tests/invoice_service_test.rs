@@ -239,3 +239,68 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
         }
     }
 }
+
+#[tokio::test]
+async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_successfully() {
+    let storage = Arc::new(Storage::new(true).await.expect("storage creation failed"));
+
+    storage
+        .init(&[
+            KadeInvoiceService::CREATE_TABLE,
+            KadeWalletService::CREATE_TABLE,
+        ])
+        .await
+        .expect("storage initialization failed");
+
+    let wallet = KadeWalletService::new(storage.clone());
+    let wallet_service = KadeWalletService::new(storage.clone());
+    let invoice_service = KadeInvoiceService::new(storage, wallet);
+
+    let wallet_req = NewWalletRequest {
+        x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),
+    };
+    let grpc_req = Request::new(wallet_req);
+    let new_wallet_res = wallet_service
+        .create_wallet(grpc_req)
+        .await
+        .expect("failed to create wallet")
+        .into_inner();
+
+    let invoice_req = NewInvoiceRequest {
+        x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
+        chain: "Bitcoin".to_string(),
+        network: "testnet".to_string(),
+        currency_code: "BTC".to_string(),
+        amount: "0.0034".to_string(),
+        description: "Create an invoice on Bitcoin test".to_string(),
+    };
+
+    let grpc_req = Request::new(invoice_req.clone());
+    let grpc_req_1 = Request::new(invoice_req.clone());
+    let grpc_req_2 = Request::new(invoice_req.clone());
+    let grpc_req_3 = Request::new(invoice_req.clone());
+
+    let (result, result1, result2, result3) = tokio::join!(
+        invoice_service.create_invoice(grpc_req),
+        invoice_service.create_invoice(grpc_req_1),
+        invoice_service.create_invoice(grpc_req_2),
+        invoice_service.create_invoice(grpc_req_3)
+    );
+
+    assert!(result.is_ok());
+    assert!(result1.is_ok());
+    assert!(result2.is_ok());
+    assert!(result3.is_ok());
+
+    let invoice_res = result.unwrap().into_inner();
+    let invoice_res1 = result1.unwrap().into_inner();
+    let invoice_res2 = result2.unwrap().into_inner();
+    let invoice_res3 = result3.unwrap().into_inner();
+
+    assert_ne!(invoice_res.address, invoice_res1.address);
+    assert_ne!(invoice_res.address, invoice_res2.address);
+    assert_ne!(invoice_res.address, invoice_res3.address);
+    assert_ne!(invoice_res1.address, invoice_res2.address);
+    assert_ne!(invoice_res1.address, invoice_res3.address);
+    assert_ne!(invoice_res2.address, invoice_res3.address);
+}

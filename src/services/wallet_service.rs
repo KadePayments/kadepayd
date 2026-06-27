@@ -5,6 +5,7 @@ use crate::wallet::{NewWalletRequest, NewWalletResponse};
 use bitcoin::bip32::Xpub;
 use std::str::FromStr;
 use std::sync::Arc;
+use tokio_postgres::Transaction;
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
 
@@ -21,17 +22,40 @@ impl KadeWalletService {
 
     const INSERT: &'static str = "INSERT INTO wallets (x_pub_key) VALUES ($1) RETURNING id;";
 
-    const SELECT_BY_ID: &'static str = "SELECT * FROM wallets WHERE id = $1;";
+    const SELECT_BY_ID: &'static str = "SELECT * FROM wallets WHERE id = $1 FOR UPDATE;";
 
     pub fn new(storage: Arc<Storage>) -> Self {
         Self { storage }
     }
 
-    pub(crate) async fn get_wallet_x_pub_key(&self, id: Uuid) -> Result<String, Status> {
-        match self.storage.query(Self::SELECT_BY_ID, &[&id]).await {
-            Ok(rows) => {
-                let pub_key = match rows.first() {
-                    Some(row) => row.get("x_pub_key"),
+    pub(crate) async fn get_x_pub_key(&self, id: Uuid) -> Result<String, Status> {
+        match self.storage.query_one(Self::SELECT_BY_ID, &[&id]).await {
+            Ok(row) => {
+                let pub_key_as_option: Option<String> = row.get("x_pub_key");
+                let pub_key = match pub_key_as_option {
+                    Some(pub_key) => pub_key,
+                    None => {
+                        return Err(Status::not_found(format!(
+                            "No x-pubkey for id: {} was found",
+                            id
+                        )));
+                    }
+                };
+                Ok(pub_key)
+            }
+            Err(_) => Err(Status::internal("Internal server error")),
+        }
+    }
+
+    pub(crate) async fn get_x_pub_key_from_db_tx(
+        db_tx: &Transaction<'_>,
+        id: Uuid,
+    ) -> Result<String, Status> {
+        match Storage::tx_query_one(db_tx, Self::SELECT_BY_ID, &[&id]).await {
+            Ok(row) => {
+                let pub_key_as_option: Option<String> = row.get("x_pub_key");
+                let pub_key = match pub_key_as_option {
+                    Some(pub_key) => pub_key,
                     None => {
                         return Err(Status::not_found(format!(
                             "No x-pubkey for id: {} was found",
