@@ -74,13 +74,13 @@ impl KadeInvoiceService {
     async fn process_new_invoice_request(
         &self,
         request: Request<NewInvoiceRequest>,
-    ) -> (Result<Response<NewInvoiceResponse>, (Status, Uuid, u32)>) {
+    ) -> (Result<Response<NewInvoiceResponse>, (Status, Option<(Uuid, u32)>)>) {
         let invoice = request.into_inner();
 
         let x_pub_key_id = match Uuid::from_str(invoice.x_pub_key_id.as_str()) {
             Ok(id) => id,
             Err(error) => {
-                return Err((Status::invalid_argument(error.to_string()), Uuid::nil(), 0));
+                return Err((Status::invalid_argument(error.to_string()), None));
             }
         };
 
@@ -89,21 +89,21 @@ impl KadeInvoiceService {
                 Ok(connection) => connection,
                 Err(error) => {
                     eprintln!("{:?}", error);
-                    return Err((Status::internal("Internal server error"), x_pub_key_id, 0));
+                    return Err((Status::internal("Internal server error"), None));
                 }
             };
             let transaction = match connection.transaction().await {
                 Ok(transaction) => transaction,
                 Err(err) => {
                     eprintln!("{:?}", err);
-                    return Err((Status::internal("Internal server error"), x_pub_key_id, 0));
+                    return Err((Status::internal("Internal server error"), None));
                 }
             };
             let account_x_pub_key =
                 match KadeWalletService::get_x_pub_key_from_db_tx(&transaction, x_pub_key_id).await
                 {
                     Ok(account_x_pub_key) => account_x_pub_key,
-                    Err(status) => return Err((status, x_pub_key_id, 0)),
+                    Err(status) => return Err((status, None)),
                 };
 
             let new_child_key_index = match Storage::tx_query_one(
@@ -121,8 +121,7 @@ impl KadeInvoiceService {
                             None => {
                                 return Err((
                                     Status::resource_exhausted("Child key indices exhausted"),
-                                    x_pub_key_id,
-                                    0,
+                                    None,
                                 ));
                             }
                         },
@@ -131,7 +130,7 @@ impl KadeInvoiceService {
                 }
                 Err(e) => {
                     let status = handle_storage_error(e, "");
-                    return Err((status, x_pub_key_id, 0));
+                    return Err((status, None));
                 }
             };
 
@@ -145,7 +144,7 @@ impl KadeInvoiceService {
                 Ok(_) => {}
                 Err(error) => {
                     let status = handle_storage_error(error, "");
-                    return Err((status, x_pub_key_id, 0));
+                    return Err((status, None));
                 }
             }
 
@@ -154,7 +153,7 @@ impl KadeInvoiceService {
                 Err(error) => {
                     eprintln!("{:?}", error);
                     let status = handle_storage_error(error, "");
-                    return Err((status, x_pub_key_id, 0));
+                    return Err((status, None));
                 }
             }
             (account_x_pub_key, new_child_key_index)
@@ -168,8 +167,7 @@ impl KadeInvoiceService {
                         "Cannot parse network with invalid name: {}",
                         invoice.network
                     )),
-                    x_pub_key_id,
-                    new_child_key_index,
+                    Some((x_pub_key_id, new_child_key_index)),
                 ));
             }
         };
@@ -183,7 +181,7 @@ impl KadeInvoiceService {
                 network,
             ) {
                 Ok(address) => address.to_string(),
-                Err(status) => return Err((status, x_pub_key_id, new_child_key_index)),
+                Err(status) => return Err((status, Some((x_pub_key_id, new_child_key_index)))),
             }
         };
 
@@ -195,8 +193,7 @@ impl KadeInvoiceService {
                 eprintln!("{:?}", error);
                 return Err((
                     Status::invalid_argument("Invalid argument"),
-                    x_pub_key_id,
-                    new_child_key_index,
+                    Some((x_pub_key_id, new_child_key_index)),
                 ));
             }
         };
@@ -224,7 +221,7 @@ impl KadeInvoiceService {
             Err(error) => {
                 let status =
                     handle_storage_error(error, "Invoice with given address already exists");
-                return Err((status, x_pub_key_id, new_child_key_index));
+                return Err((status, Some((x_pub_key_id, new_child_key_index))));
             }
         };
 
@@ -240,7 +237,7 @@ impl InvoiceService for KadeInvoiceService {
     ) -> Result<Response<NewInvoiceResponse>, Status> {
         match self.process_new_invoice_request(request).await {
             Ok(response) => Ok(response),
-            Err((status, x_pub_key_id, new_child_key_index)) => {
+            Err((status, Some((x_pub_key_id, new_child_key_index)))) => {
                 match self
                     .storage
                     .execute(
@@ -257,6 +254,7 @@ impl InvoiceService for KadeInvoiceService {
                 }
                 Err(status)
             }
+            Err((status, None)) => Err(status),
         }
     }
 }
