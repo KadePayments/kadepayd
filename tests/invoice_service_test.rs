@@ -10,6 +10,7 @@ use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
 use tonic::Request;
+use uuid::Uuid;
 
 #[tokio::test]
 async fn should_create_an_invoice_successfully() {
@@ -19,6 +20,7 @@ async fn should_create_an_invoice_successfully() {
         .init(&[
             KadeInvoiceService::CREATE_TABLE,
             KadeWalletService::CREATE_TABLE,
+            KadeInvoiceService::CREATE_CHILD_INDICES_TABLE,
         ])
         .await
         .expect("storage initialization failed");
@@ -80,6 +82,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
         .init(&[
             KadeInvoiceService::CREATE_TABLE,
             KadeWalletService::CREATE_TABLE,
+            KadeInvoiceService::CREATE_CHILD_INDICES_TABLE,
         ])
         .await
         .expect("storage initialization failed");
@@ -167,6 +170,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
         .init(&[
             KadeInvoiceService::CREATE_TABLE,
             KadeWalletService::CREATE_TABLE,
+            KadeInvoiceService::CREATE_CHILD_INDICES_TABLE,
         ])
         .await
         .expect("storage initialization failed");
@@ -247,6 +251,7 @@ async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_success
     storage
         .init(&[
             KadeInvoiceService::CREATE_TABLE,
+            KadeInvoiceService::CREATE_CHILD_INDICES_TABLE,
             KadeWalletService::CREATE_TABLE,
         ])
         .await
@@ -303,4 +308,69 @@ async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_success
     assert_ne!(invoice_res1.address, invoice_res2.address);
     assert_ne!(invoice_res1.address, invoice_res3.address);
     assert_ne!(invoice_res2.address, invoice_res3.address);
+}
+#[tokio::test]
+async fn should_clean_up_unused_child_key_indices_after_failure() {
+    let storage = Arc::new(Storage::new(true).await.expect("storage creation failed"));
+
+    storage
+        .init(&[
+            KadeInvoiceService::CREATE_TABLE,
+            KadeInvoiceService::CREATE_CHILD_INDICES_TABLE,
+            KadeWalletService::CREATE_TABLE,
+        ])
+        .await
+        .expect("storage initialization failed");
+
+    let wallet = KadeWalletService::new(storage.clone());
+    let wallet_service = KadeWalletService::new(storage.clone());
+    let invoice_service = KadeInvoiceService::new(storage.clone(), wallet);
+
+    let wallet_req = NewWalletRequest {
+        x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),
+    };
+    let grpc_req = Request::new(wallet_req);
+    let new_wallet_res = wallet_service
+        .create_wallet(grpc_req)
+        .await
+        .expect("failed to create wallet")
+        .into_inner();
+
+    let invoice_req = NewInvoiceRequest {
+        x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
+        chain: "Bitcoin".to_string(),
+        network: "testnet".to_string(),
+        currency_code: "BTC".to_string(),
+        amount: "0.0034BTC".to_string(),
+        description: "Create an invoice on Bitcoin test".to_string(),
+    };
+
+    let grpc_req = Request::new(invoice_req.clone());
+    let grpc_req_1 = Request::new(invoice_req.clone());
+    let grpc_req_2 = Request::new(invoice_req.clone());
+    let grpc_req_3 = Request::new(invoice_req.clone());
+
+    let (result, result1, result2, result3) = tokio::join!(
+        invoice_service.create_invoice(grpc_req),
+        invoice_service.create_invoice(grpc_req_1),
+        invoice_service.create_invoice(grpc_req_2),
+        invoice_service.create_invoice(grpc_req_3)
+    );
+
+    assert!(result.is_err());
+    assert!(result1.is_err());
+    assert!(result2.is_err());
+    assert!(result3.is_err());
+
+    // Assert that every call cleaned up it's failed index
+    let x_pub_key_id =
+        Uuid::from_str(new_wallet_res.x_pub_key_id.as_str()).expect("failed to parse x_pub_key_id");
+    let indices = storage
+        .query(
+            KadeInvoiceService::SELECT_CHILD_INDICES_BY_WALLET,
+            &[&x_pub_key_id],
+        )
+        .await
+        .expect("query failed");
+    assert_eq!(indices.len(), 0);
 }

@@ -30,6 +30,7 @@ impl Engine {
         let create_table_commands = [
             KadeInvoiceService::CREATE_TABLE,
             KadeWalletService::CREATE_TABLE,
+            KadeInvoiceService::CREATE_CHILD_INDICES_TABLE,
         ];
         storage.init(&create_table_commands).await
     }
