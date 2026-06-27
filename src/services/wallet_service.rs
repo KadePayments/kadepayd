@@ -29,10 +29,11 @@ impl KadeWalletService {
     }
 
     pub(crate) async fn get_x_pub_key(&self, id: Uuid) -> Result<String, Status> {
-        match self.storage.query(Self::SELECT_BY_ID, &[&id]).await {
-            Ok(rows) => {
-                let pub_key = match rows.first() {
-                    Some(row) => row.get("x_pub_key"),
+        match self.storage.query_one(Self::SELECT_BY_ID, &[&id]).await {
+            Ok(row) => {
+                let pub_key_as_option: Option<String> = row.get("x_pub_key");
+                let pub_key = match pub_key_as_option {
+                    Some(pub_key) => pub_key,
                     None => {
                         return Err(Status::not_found(format!(
                             "No x-pubkey for id: {} was found",
@@ -50,10 +51,11 @@ impl KadeWalletService {
         db_tx: &Transaction<'_>,
         id: Uuid,
     ) -> Result<String, Status> {
-        match Storage::tx_query(db_tx, Self::SELECT_BY_ID, &[&id]).await {
-            Ok(rows) => {
-                let pub_key = match rows.first() {
-                    Some(row) => row.get("x_pub_key"),
+        match Storage::tx_query_one(db_tx, Self::SELECT_BY_ID, &[&id]).await {
+            Ok(row) => {
+                let pub_key_as_option: Option<String> = row.get("x_pub_key");
+                let pub_key = match pub_key_as_option {
+                    Some(pub_key) => pub_key,
                     None => {
                         return Err(Status::not_found(format!(
                             "No x-pubkey for id: {} was found",

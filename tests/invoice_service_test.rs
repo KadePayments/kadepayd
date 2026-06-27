@@ -287,10 +287,10 @@ async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_success
         invoice_service.create_invoice(grpc_req_3)
     );
 
-    assert_eq!(result.is_ok(), true);
-    assert_eq!(result1.is_ok(), true);
-    assert_eq!(result2.is_ok(), true);
-    assert_eq!(result3.is_ok(), true);
+    assert!(result.is_ok());
+    assert!(result1.is_ok());
+    assert!(result2.is_ok());
+    assert!(result3.is_ok());
 
     let invoice_res = result.unwrap().into_inner();
     let invoice_res1 = result1.unwrap().into_inner();
