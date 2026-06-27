@@ -8,8 +8,8 @@
 </p>
 
 ## Overview
-**kadepayd** is a daemon server to power **KadePay**, a self-hosted payment processor for accepting off-chain Bitcoin 
-payments powered by Arkade.
+**kadepayd** is a daemon server to power **KadePay**, a self-hosted payment processor for accepting on-chain and off-chain Bitcoin 
+payments. Off-chain payments are powered by [ArkadeOS](https://github.com/arkade-os).
 
 ⚠ **Note:** This project is under heavy development, do not use for production.
 
