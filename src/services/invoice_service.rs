@@ -4,6 +4,7 @@ use crate::data::errors::handle_storage_error;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceService;
 use crate::invoice::{NewInvoiceRequest, NewInvoiceResponse};
+use crate::server::config::Config;
 use crate::services::wallet_service::KadeWalletService;
 use bitcoin::Network;
 use chrono::Utc;
@@ -16,7 +17,6 @@ use uuid::Uuid;
 #[derive(Debug)]
 pub struct KadeInvoiceService {
     storage: Arc<Storage>,
-    arkade_client: ArkadeClient,
 }
 
 impl KadeInvoiceService {
@@ -68,11 +68,8 @@ impl KadeInvoiceService {
     pub const SELECT_CHILD_INDICES_BY_WALLET: &'static str =
         "SELECT * FROM child_key_indices WHERE x_pub_key_id = $1;";
 
-    pub fn new(storage: Arc<Storage>, arkade_client: ArkadeClient) -> Self {
-        Self {
-            storage,
-            arkade_client,
-        }
+    pub fn new(storage: Arc<Storage>) -> Self {
+        Self { storage }
     }
 
     async fn process_new_invoice_request(
@@ -177,15 +174,26 @@ impl KadeInvoiceService {
         };
 
         let address = if invoice.chain == "Arkade" {
-            let server_info = match self.arkade_client.get_info().await {
+            let server_config = Config::new();
+            let arkade_client = match ArkadeClient::new_connection(
+                server_config.arkade_server_url.as_str(),
+            )
+            .await
+            {
+                Ok(client) => client,
+                Err(error) => {
+                    return Err((Status::from_error(Box::from(error)), None));
+                }
+            };
+            let server_info = match arkade_client.get_info().await {
                 Ok(server_info) => server_info,
                 Err(status) => {
                     return Err((status, Some((x_pub_key_id, new_child_key_index))));
                 }
             };
+
             let server_pub_key = server_info.signer_pk.x_only_public_key().0;
             let exit_delay = server_info.unilateral_exit_delay;
-            let network = server_info.network;
             match KadeHDWallet::new_offchain_payment_address(
                 account_x_pub_key,
                 server_pub_key,

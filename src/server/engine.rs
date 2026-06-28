@@ -16,9 +16,7 @@ impl Engine {
         let storage = Arc::new(Storage::new(false).await?);
         Self::init_storage(&storage).await?;
         let wallet_service = KadeWalletService::new(storage.clone());
-        let ark_client =
-            ArkadeClient::new_connection(server_config.arkade_server_url.as_str()).await?;
-        let invoice_service = KadeInvoiceService::new(storage.clone(), ark_client);
+        let invoice_service = KadeInvoiceService::new(storage.clone());
 
         Server::builder()
             .add_service(InvoiceServiceServer::new(invoice_service))

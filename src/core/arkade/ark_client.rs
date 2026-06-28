@@ -17,7 +17,7 @@ impl ArkadeClient {
     pub async fn get_info(&self) -> Result<Info, Status> {
         match self.client.get_info().await {
             Ok(server_info) => Ok(server_info),
-            Err(_) => Err(Status::internal("Internal server error")),
+            Err(error) => Err(Status::from_error(Box::from(error))),
         }
     }
 }
