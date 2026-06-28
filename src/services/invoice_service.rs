@@ -197,7 +197,10 @@ impl KadeInvoiceService {
                     {
                         Ok(client) => client,
                         Err(error) => {
-                            return Err((Status::from_error(Box::from(error)), None));
+                            return Err((
+                                Status::from_error(Box::from(error)),
+                                Some((x_pub_key_id, new_child_key_index)),
+                            ));
                         }
                     };
                     match arkade_client.get_info().await {
