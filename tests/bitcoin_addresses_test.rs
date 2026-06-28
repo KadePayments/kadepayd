@@ -1,15 +1,15 @@
 use bitcoin::Network;
-use kadepayd::core::bitcoin::addresses::new_onchain_payment_address;
+use kadepayd::core::KadeHDWallet;
 use std::collections::HashSet;
 
 #[test]
 fn should_generate_new_onchain_payment_address_for_every_index_successfully() {
     let mut prev_address = "".to_string();
     let mut seen_addresses: HashSet<String> = HashSet::new();
-    for prev_index in 0..16 {
-        let address_result = new_onchain_payment_address(
+    for index in 0..16 {
+        let address_result = KadeHDWallet::new_onchain_payment_address(
             "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55ntaF".to_string(),
-            prev_index,
+            index,
             Network::Testnet,
         );
         assert!(address_result.is_ok());
