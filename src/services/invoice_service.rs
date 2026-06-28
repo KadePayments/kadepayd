@@ -17,6 +17,7 @@ use uuid::Uuid;
 #[derive(Debug)]
 pub struct KadeInvoiceService {
     storage: Arc<Storage>,
+    test: bool,
 }
 
 impl KadeInvoiceService {
@@ -69,7 +70,17 @@ impl KadeInvoiceService {
         "SELECT * FROM child_key_indices WHERE x_pub_key_id = $1;";
 
     pub fn new(storage: Arc<Storage>) -> Self {
-        Self { storage }
+        Self {
+            storage,
+            test: false,
+        }
+    }
+
+    pub fn new_test(storage: Arc<Storage>) -> Self {
+        Self {
+            storage,
+            test: true,
+        }
     }
 
     async fn process_new_invoice_request(
@@ -174,23 +185,39 @@ impl KadeInvoiceService {
         };
 
         let address = if invoice.chain == "Arkade" {
-            let server_config = Config::new();
-            let arkade_client = match ArkadeClient::new_connection(
-                server_config.arkade_server_url.as_str(),
-            )
-            .await
-            {
-                Ok(client) => client,
-                Err(error) => {
-                    return Err((Status::from_error(Box::from(error)), None));
+            let server_info = {
+                if self.test {
+                    ArkadeClient::get_test_info()
+                } else {
+                    let server_config = Config::new();
+                    let arkade_client = match ArkadeClient::new_connection(
+                        server_config.arkade_server_url.as_str(),
+                    )
+                    .await
+                    {
+                        Ok(client) => client,
+                        Err(error) => {
+                            return Err((Status::from_error(Box::from(error)), None));
+                        }
+                    };
+                    match arkade_client.get_info().await {
+                        Ok(server_info) => server_info,
+                        Err(status) => {
+                            return Err((status, Some((x_pub_key_id, new_child_key_index))));
+                        }
+                    }
                 }
             };
-            let server_info = match arkade_client.get_info().await {
-                Ok(server_info) => server_info,
-                Err(status) => {
-                    return Err((status, Some((x_pub_key_id, new_child_key_index))));
-                }
-            };
+
+            let ark_network = server_info.network;
+            if ark_network != network {
+                return Err((
+                    Status::invalid_argument(format!(
+                        "Arkade server network {ark_network} does not match invoice network {network}"
+                    )),
+                    Some((x_pub_key_id, new_child_key_index)),
+                ));
+            }
 
             let server_pub_key = server_info.signer_pk.x_only_public_key().0;
             let exit_delay = server_info.unilateral_exit_delay;
