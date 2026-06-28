@@ -10,6 +10,7 @@ pub struct Config {
     pub(crate) kadepay_db_user: String,
     pub(crate) kadepay_db_password: String,
     pub(crate) kadepay_db_name: String,
+    pub(crate) arkade_server_url: String,
 }
 
 impl Config {
@@ -20,6 +21,7 @@ impl Config {
     const KADEPAY_DB_USER_KEY: &'static str = "KADEPAY_DB_USER";
     const KADEPAY_DB_PASSWORD_KEY: &'static str = "KADEPAY_DB_PASSWORD";
     const KADEPAY_DB_NAME_KEY: &'static str = "KADEPAY_DB_NAME";
+    const ARKADE_URL_KEY: &'static str = "ARKADE_URL";
 
     pub fn new() -> Config {
         let local_secrets = read_local_secrets();
@@ -61,6 +63,10 @@ impl Config {
             .ok()
             .or_else(|| local_secrets.get(Self::KADEPAY_DB_NAME_KEY).cloned())
             .expect("Missing KADEPAY_DB_NAME in environment variables or secrets");
+        let arkade_url = env::var(Self::ARKADE_URL_KEY)
+            .ok()
+            .or_else(|| local_secrets.get(Self::ARKADE_URL_KEY).cloned())
+            .expect("Missing ARKADE_URL in environment variables or secrets");
 
         Config {
             kadepay_server_addr,
@@ -69,6 +75,7 @@ impl Config {
             kadepay_db_user: db_user,
             kadepay_db_password: db_password,
             kadepay_db_name: db_name,
+            arkade_server_url: arkade_url,
         }
     }
 }

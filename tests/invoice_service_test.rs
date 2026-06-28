@@ -1,4 +1,5 @@
 use bitcoin::{Address, Network};
+use kadepayd::core::arkade::ark_client::ArkadeClient;
 use kadepayd::data::storage::Storage;
 use kadepayd::invoice::NewInvoiceRequest;
 use kadepayd::invoice::invoice_service_server::InvoiceService;
@@ -34,7 +35,11 @@ async fn should_create_an_invoice_successfully() {
         .expect("failed to create wallet")
         .into_inner();
 
-    let invoice_service = KadeInvoiceService::new(storage, wallet);
+    let ark_client = ArkadeClient::new_connection("https://mutinynet.arkade.sh")
+        .await
+        .expect("ark client connection failed");
+
+    let invoice_service = KadeInvoiceService::new(storage, ark_client);
 
     let invoice_req = NewInvoiceRequest {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
@@ -96,7 +101,11 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
         .expect("failed to create wallet")
         .into_inner();
 
-    let invoice_service = KadeInvoiceService::new(storage, wallet);
+    let ark_client = ArkadeClient::new_connection("https://mutinynet.arkade.sh")
+        .await
+        .expect("ark client connection failed");
+
+    let invoice_service = KadeInvoiceService::new(storage, ark_client);
 
     let mut prev_address = "".to_string();
     let mut seen_addresses: HashSet<String> = HashSet::new();
@@ -175,9 +184,11 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
         .await
         .expect("storage initialization failed");
 
-    let wallet = KadeWalletService::new(storage.clone());
     let wallet_service = KadeWalletService::new(storage.clone());
-    let invoice_service = KadeInvoiceService::new(storage, wallet);
+    let ark_client = ArkadeClient::new_connection("https://mutinynet.arkade.sh")
+        .await
+        .expect("ark client connection failed");
+    let invoice_service = KadeInvoiceService::new(storage, ark_client);
 
     let mut prev_address = "".to_string();
     let mut seen_addresses: HashSet<String> = HashSet::new();
@@ -257,9 +268,12 @@ async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_success
         .await
         .expect("storage initialization failed");
 
-    let wallet = KadeWalletService::new(storage.clone());
     let wallet_service = KadeWalletService::new(storage.clone());
-    let invoice_service = KadeInvoiceService::new(storage, wallet);
+    let ark_client = ArkadeClient::new_connection("https://mutinynet.arkade.sh")
+        .await
+        .expect("ark client connection failed");
+
+    let invoice_service = KadeInvoiceService::new(storage, ark_client);
 
     let wallet_req = NewWalletRequest {
         x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),
@@ -322,9 +336,11 @@ async fn should_clean_up_unused_child_key_indices_after_failure() {
         .await
         .expect("storage initialization failed");
 
-    let wallet = KadeWalletService::new(storage.clone());
     let wallet_service = KadeWalletService::new(storage.clone());
-    let invoice_service = KadeInvoiceService::new(storage.clone(), wallet);
+    let ark_client = ArkadeClient::new_connection("https://mutinynet.arkade.sh")
+        .await
+        .expect("ark client connection failed");
+    let invoice_service = KadeInvoiceService::new(storage.clone(), ark_client);
 
     let wallet_req = NewWalletRequest {
         x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),

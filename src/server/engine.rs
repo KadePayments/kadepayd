@@ -1,3 +1,4 @@
+use crate::core::arkade::ark_client::ArkadeClient;
 use crate::data::errors::StorageError;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceServiceServer;
@@ -14,9 +15,10 @@ impl Engine {
         let server_config = Config::new();
         let storage = Arc::new(Storage::new(false).await?);
         Self::init_storage(&storage).await?;
-        let invoice_wallet = KadeWalletService::new(storage.clone());
         let wallet_service = KadeWalletService::new(storage.clone());
-        let invoice_service = KadeInvoiceService::new(storage.clone(), invoice_wallet);
+        let ark_client =
+            ArkadeClient::new_connection(server_config.arkade_server_url.as_str()).await?;
+        let invoice_service = KadeInvoiceService::new(storage.clone(), ark_client);
 
         Server::builder()
             .add_service(InvoiceServiceServer::new(invoice_service))

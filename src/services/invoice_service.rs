@@ -1,4 +1,5 @@
-use crate::core::bitcoin::addresses::new_onchain_payment_address;
+use crate::core::KadeHDWallet;
+use crate::core::arkade::ark_client::ArkadeClient;
 use crate::data::errors::handle_storage_error;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceService;
@@ -15,7 +16,7 @@ use uuid::Uuid;
 #[derive(Debug)]
 pub struct KadeInvoiceService {
     storage: Arc<Storage>,
-    wallet: KadeWalletService,
+    arkade_client: ArkadeClient,
 }
 
 impl KadeInvoiceService {
@@ -27,7 +28,7 @@ impl KadeInvoiceService {
     currency_code VARCHAR(3) NOT NULL,
     chain VARCHAR(8) NOT NULL,
     network VARCHAR(20) NOT NULL,
-    address VARCHAR(90) NOT NULL UNIQUE,
+    address VARCHAR(150) NOT NULL UNIQUE,
     status VARCHAR(10) NOT NULL,
     description VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -67,8 +68,11 @@ impl KadeInvoiceService {
     pub const SELECT_CHILD_INDICES_BY_WALLET: &'static str =
         "SELECT * FROM child_key_indices WHERE x_pub_key_id = $1;";
 
-    pub fn new(storage: Arc<Storage>, wallet: KadeWalletService) -> Self {
-        Self { storage, wallet }
+    pub fn new(storage: Arc<Storage>, arkade_client: ArkadeClient) -> Self {
+        Self {
+            storage,
+            arkade_client,
+        }
     }
 
     async fn process_new_invoice_request(
@@ -173,9 +177,27 @@ impl KadeInvoiceService {
         };
 
         let address = if invoice.chain == "Arkade" {
-            "<ark1...>".to_string()
+            let server_info = match self.arkade_client.get_info().await {
+                Ok(server_info) => server_info,
+                Err(status) => {
+                    return Err((status, Some((x_pub_key_id, new_child_key_index))));
+                }
+            };
+            let server_pub_key = server_info.signer_pk.x_only_public_key().0;
+            let exit_delay = server_info.unilateral_exit_delay;
+            let network = server_info.network;
+            match KadeHDWallet::new_offchain_payment_address(
+                account_x_pub_key,
+                server_pub_key,
+                exit_delay,
+                new_child_key_index,
+                network,
+            ) {
+                Ok(address) => address.to_string(),
+                Err(status) => return Err((status, Some((x_pub_key_id, new_child_key_index)))),
+            }
         } else {
-            match new_onchain_payment_address(
+            match KadeHDWallet::new_onchain_payment_address(
                 account_x_pub_key.to_string(),
                 new_child_key_index,
                 network,
