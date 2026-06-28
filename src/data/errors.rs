@@ -1,5 +1,5 @@
 use bb8::RunError;
-use std::fmt::{Display, Formatter, Write};
+use std::fmt::{Display, Formatter};
 use tokio_postgres::Error;
 use tokio_postgres::error::SqlState;
 use tonic::Status;

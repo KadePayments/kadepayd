@@ -1,4 +1,3 @@
-use crate::core::arkade::ark_client::ArkadeClient;
 use crate::data::errors::StorageError;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceServiceServer;

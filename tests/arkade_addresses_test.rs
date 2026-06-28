@@ -1,10 +1,6 @@
-use ark_core::server::Info;
-use bitcoin::{
-    Address, Amount, KnownHrp, Network, ScriptBuf, Sequence, WitnessProgram, WitnessVersion,
-};
 use kadepayd::core::KadeHDWallet;
 use kadepayd::core::arkade::ark_client::ArkadeClient;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 #[tokio::test]
 async fn should_generate_new_offchain_payment_address_on_mutinynet_successfully() {

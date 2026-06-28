@@ -1,6 +1,5 @@
 use ark_core::ArkAddress;
 use bitcoin::{Address, Network};
-use kadepayd::core::arkade::ark_client::ArkadeClient;
 use kadepayd::data::storage::Storage;
 use kadepayd::invoice::NewInvoiceRequest;
 use kadepayd::invoice::invoice_service_server::InvoiceService;
