@@ -25,7 +25,14 @@ impl ArkadeClient {
         }
     }
 
+    // For unit testing
     pub fn get_test_info() -> Info {
+        let witness_program =
+            hex::decode("15048e41633084bfcae91d03b3c2bb7f6ac78440").expect("failed deserializing");
+        let checkpoint_tapscript = hex::decode(
+            "03a80040b27520dfcaec558c7e78cf3e38b898ba8a43cfb5727266bae32c5c5b3aeb32c558aa0bac",
+        )
+        .expect("failed deserializing");
         Info {
             version: "".to_string(),
             signer_pk: "03a19310a999207dbd9a03d20f649e37c7a578a07d75e6fa19aa3f33fc6b15622c"
@@ -35,17 +42,10 @@ impl ArkadeClient {
                 .parse()
                 .unwrap(),
             forfeit_address: Address::from_witness_program(
-                WitnessProgram::new(
-                    WitnessVersion::V1,
-                    "15048e41633084bfcae91d03b3c2bb7f6ac78440".as_bytes(),
-                )
-                .unwrap(),
+                WitnessProgram::new(WitnessVersion::V1, &witness_program).unwrap(),
                 KnownHrp::Testnets,
             ),
-            checkpoint_tapscript: ScriptBuf::from_bytes(Vec::from(
-                "03a80040b27520dfcaec558c7e78cf3e38b898ba8a43cfb5727266bae32c5c5b3aeb32c558aa0bac"
-                    .as_bytes(),
-            )),
+            checkpoint_tapscript: ScriptBuf::from_bytes(checkpoint_tapscript),
             network: Network::Testnet,
             session_duration: 1,
             unilateral_exit_delay: Sequence(2),

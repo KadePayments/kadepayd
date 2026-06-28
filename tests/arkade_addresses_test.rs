@@ -3,7 +3,7 @@ use kadepayd::core::arkade::ark_client::ArkadeClient;
 use std::collections::HashSet;
 
 #[tokio::test]
-async fn should_generate_new_offchain_payment_address_on_mutinynet_successfully() {
+async fn should_generate_new_offchain_payment_address_successfully() {
     let server_info = ArkadeClient::get_test_info();
     let server_pub_key = server_info.signer_pk.x_only_public_key().0;
     let exit_delay = server_info.unilateral_exit_delay;
