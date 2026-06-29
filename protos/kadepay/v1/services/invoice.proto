@@ -3,7 +3,9 @@ syntax = "proto3";
 package kadepay.v1.services.invoice;
 
 service InvoiceService {
-    rpc CreateInvoice(NewInvoiceRequest) returns (NewInvoiceResponse) {}
+    rpc CreateInvoice(NewInvoiceRequest) returns (InvoiceResponse) {}
+
+    rpc GetInvoices(InvoiceResponse) returns (GetInvoicesResponse) {}
 }
 
 message NewInvoiceRequest {
@@ -15,7 +17,7 @@ message NewInvoiceRequest {
     string description = 6;
 }
 
-message NewInvoiceResponse {
+message InvoiceResponse {
     string id = 1;
     string x_pub_key_id = 2;
     string chain = 3;
@@ -26,4 +28,13 @@ message NewInvoiceResponse {
     int64 created_at = 8;
     string description = 9;
     string status = 10;
+    int32 child_key_index = 11;
+}
+
+message GetInvoicesRequest {
+    string x_pub_key_id = 1;
+}
+
+message GetInvoicesResponse {
+    repeated InvoiceResponse invoices = 1;
 }
