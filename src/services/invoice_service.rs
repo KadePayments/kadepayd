@@ -3,7 +3,7 @@ use crate::core::arkade::ark_client::ArkadeClient;
 use crate::data::errors::handle_storage_error;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceService;
-use crate::invoice::{NewInvoiceRequest, NewInvoiceResponse};
+use crate::invoice::{GetInvoicesRequest, GetInvoicesResponse, InvoiceResponse, NewInvoiceRequest};
 use crate::server::config::Config;
 use crate::services::wallet_service::KadeWalletService;
 use bitcoin::Network;
@@ -58,6 +58,8 @@ impl KadeInvoiceService {
     pub const DELETE_CHILD_INDEX: &'static str =
         "DELETE FROM child_key_indices WHERE x_pub_key_id = $1 AND child_key_index = $2";
     pub const SELECT_BY_ID: &'static str = "SELECT * FROM invoices WHERE id = $1;";
+    pub const SELECT_BY_WALLET: &'static str =
+        "SELECT * FROM invoices WHERE x_pub_key_id = $1 ORDER BY child_key_index;";
     pub const SELECT_BY_ADDRESS: &'static str = "SELECT * FROM invoices WHERE address = $1;";
 
     pub const SELECT_MAX_CHILD_INDEX_BY_WALLET: &'static str =
@@ -86,7 +88,7 @@ impl KadeInvoiceService {
     async fn process_new_invoice_request(
         &self,
         request: Request<NewInvoiceRequest>,
-    ) -> (Result<Response<NewInvoiceResponse>, (Status, Option<(Uuid, u32)>)>) {
+    ) -> (Result<Response<InvoiceResponse>, (Status, Option<(Uuid, u32)>)>) {
         let invoice = request.into_inner();
 
         let x_pub_key_id = match Uuid::from_str(invoice.x_pub_key_id.as_str()) {
@@ -285,7 +287,7 @@ impl KadeInvoiceService {
             }
         };
 
-        Ok(Response::new(NewInvoiceResponse::from_row(invoice_row)))
+        Ok(Response::new(InvoiceResponse::from_row(&invoice_row)))
     }
 }
 
@@ -294,7 +296,7 @@ impl InvoiceService for KadeInvoiceService {
     async fn create_invoice(
         &self,
         request: Request<NewInvoiceRequest>,
-    ) -> Result<Response<NewInvoiceResponse>, Status> {
+    ) -> Result<Response<InvoiceResponse>, Status> {
         match self.process_new_invoice_request(request).await {
             Ok(response) => Ok(response),
             Err((status, Some((x_pub_key_id, new_child_key_index)))) => {
@@ -316,5 +318,33 @@ impl InvoiceService for KadeInvoiceService {
             }
             Err((status, None)) => Err(status),
         }
+    }
+
+    async fn get_invoices(
+        &self,
+        request: Request<GetInvoicesRequest>,
+    ) -> Result<Response<GetInvoicesResponse>, Status> {
+        let x_pub_key_id = match Uuid::from_str(request.into_inner().x_pub_key_id.as_str()) {
+            Ok(x_pub_key_id) => x_pub_key_id,
+            Err(_) => return Err(Status::invalid_argument("Invalid x-pub-key id")),
+        };
+
+        let invoices: Vec<InvoiceResponse> = match self
+            .storage
+            .query(Self::SELECT_BY_WALLET, &[&x_pub_key_id])
+            .await
+        {
+            Ok(rows) => rows
+                .iter()
+                .map(|row| InvoiceResponse::from_row(row))
+                .collect(),
+            Err(error) => {
+                let status = handle_storage_error(error, "");
+                return Err(status);
+            }
+        };
+
+        let invoices_response = GetInvoicesResponse { invoices };
+        Ok(Response::new(invoices_response))
     }
 }

@@ -1,0 +1,6 @@
+GRPC localhost:50051/kadepay.v1.services.invoice.InvoiceService/GetInvoices
+Content-Type: application/json
+
+{
+  "x_pub_key_id": "6b24201b-0543-4f1e-b851-659f68067142"
+}

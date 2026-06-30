@@ -1,8 +1,6 @@
 use crate::core::KadeHDWallet;
-use bitcoin::bip32::{ChildNumber, Xpub};
 use bitcoin::secp256k1::Secp256k1;
 use bitcoin::{Address, Network};
-use std::str::FromStr;
 use tonic::Status;
 
 impl KadeHDWallet {

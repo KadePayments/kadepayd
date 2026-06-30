@@ -1,4 +1,4 @@
-use crate::invoice::NewInvoiceResponse;
+use crate::invoice::InvoiceResponse;
 use crate::wallet::NewWalletResponse;
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
@@ -8,12 +8,13 @@ use uuid::Uuid;
 pub mod errors;
 pub mod storage;
 
-impl NewInvoiceResponse {
-    pub fn from_row(row: Row) -> Self {
+impl InvoiceResponse {
+    pub fn from_row(row: &Row) -> Self {
         let id: Uuid = row.get("id");
         let x_pub_key_id: Uuid = row.get("x_pub_key_id");
         let created_at: DateTime<Utc> = row.get("created_at");
         let amount: Decimal = row.get("amount");
+        let child_key_index: i32 = row.get("child_key_index");
         Self {
             id: id.to_string(),
             x_pub_key_id: x_pub_key_id.to_string(),
@@ -25,6 +26,7 @@ impl NewInvoiceResponse {
             status: row.get("status"),
             description: row.get("description"),
             created_at: created_at.timestamp(),
+            child_key_index,
         }
     }
 }
