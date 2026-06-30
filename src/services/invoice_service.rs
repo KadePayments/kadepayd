@@ -58,7 +58,8 @@ impl KadeInvoiceService {
     pub const DELETE_CHILD_INDEX: &'static str =
         "DELETE FROM child_key_indices WHERE x_pub_key_id = $1 AND child_key_index = $2";
     pub const SELECT_BY_ID: &'static str = "SELECT * FROM invoices WHERE id = $1;";
-    pub const SELECT_BY_WALLET: &'static str = "SELECT * FROM invoices WHERE x_pub_key_id = $1;";
+    pub const SELECT_BY_WALLET: &'static str =
+        "SELECT * FROM invoices WHERE x_pub_key_id = $1 ORDER BY child_key_index;";
     pub const SELECT_BY_ADDRESS: &'static str = "SELECT * FROM invoices WHERE address = $1;";
 
     pub const SELECT_MAX_CHILD_INDEX_BY_WALLET: &'static str =

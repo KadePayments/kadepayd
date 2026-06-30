@@ -534,4 +534,14 @@ async fn should_fetch_invoices_successfully() {
     let invoices = invoices_res.into_inner().invoices;
 
     assert_eq!(invoices.len(), 10);
+
+    let mut child_key_index = 0;
+    invoices.iter().for_each(|invoice| {
+        assert_eq!(
+            invoice.x_pub_key_id,
+            new_wallet_res.x_pub_key_id.to_string()
+        );
+        assert_eq!(invoice.child_key_index, child_key_index);
+        child_key_index += 1
+    })
 }
