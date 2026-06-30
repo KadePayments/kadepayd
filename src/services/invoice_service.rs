@@ -3,7 +3,7 @@ use crate::core::arkade::ark_client::ArkadeClient;
 use crate::data::errors::handle_storage_error;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceService;
-use crate::invoice::{GetInvoicesResponse, InvoiceResponse, NewInvoiceRequest};
+use crate::invoice::{GetInvoicesRequest, GetInvoicesResponse, InvoiceResponse, NewInvoiceRequest};
 use crate::server::config::Config;
 use crate::services::wallet_service::KadeWalletService;
 use bitcoin::Network;
@@ -321,7 +321,7 @@ impl InvoiceService for KadeInvoiceService {
 
     async fn get_invoices(
         &self,
-        request: Request<InvoiceResponse>,
+        request: Request<GetInvoicesRequest>,
     ) -> Result<Response<GetInvoicesResponse>, Status> {
         let x_pub_key_id = match Uuid::from_str(request.into_inner().x_pub_key_id.as_str()) {
             Ok(x_pub_key_id) => x_pub_key_id,
@@ -342,8 +342,6 @@ impl InvoiceService for KadeInvoiceService {
                 return Err(status);
             }
         };
-
-        eprintln!("{:?}", invoices);
 
         let invoices_response = GetInvoicesResponse { invoices };
         Ok(Response::new(invoices_response))

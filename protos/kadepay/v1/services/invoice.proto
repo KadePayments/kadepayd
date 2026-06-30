@@ -5,7 +5,7 @@ package kadepay.v1.services.invoice;
 service InvoiceService {
     rpc CreateInvoice(NewInvoiceRequest) returns (InvoiceResponse) {}
 
-    rpc GetInvoices(InvoiceResponse) returns (GetInvoicesResponse) {}
+    rpc GetInvoices(GetInvoicesRequest) returns (GetInvoicesResponse) {}
 }
 
 message NewInvoiceRequest {

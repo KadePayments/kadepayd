@@ -1,8 +1,8 @@
 use ark_core::ArkAddress;
 use bitcoin::{Address, Network};
 use kadepayd::data::storage::Storage;
-use kadepayd::invoice::NewInvoiceRequest;
 use kadepayd::invoice::invoice_service_server::InvoiceService;
+use kadepayd::invoice::{GetInvoicesRequest, NewInvoiceRequest};
 use kadepayd::services::invoice_service::KadeInvoiceService;
 use kadepayd::services::wallet_service::KadeWalletService;
 use kadepayd::wallet::NewWalletRequest;
@@ -10,7 +10,7 @@ use kadepayd::wallet::wallet_service_server::WalletService;
 use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
-use tonic::Request;
+use tonic::{Request, Response};
 use uuid::Uuid;
 
 #[tokio::test]
@@ -482,4 +482,56 @@ async fn should_clean_up_unused_child_key_indices_after_failure() {
         .await
         .expect("query failed");
     assert_eq!(indices.len(), 0);
+}
+
+#[tokio::test]
+async fn should_fetch_invoices_successfully() {
+    let storage = Arc::new(Storage::new(true).await.expect("storage creation failed"));
+    storage
+        .init(&[
+            KadeInvoiceService::CREATE_TABLE,
+            KadeInvoiceService::CREATE_CHILD_INDICES_TABLE,
+            KadeWalletService::CREATE_TABLE,
+        ])
+        .await
+        .expect("storage initialization failed");
+
+    let invoice_service = KadeInvoiceService::new(storage.clone());
+    let wallet_service = KadeWalletService::new(storage.clone());
+
+    let wallet_req = NewWalletRequest {
+        x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),
+    };
+    let grpc_req = Request::new(wallet_req);
+    let new_wallet_res = wallet_service
+        .create_wallet(grpc_req)
+        .await
+        .expect("failed to create wallet")
+        .into_inner();
+    let invoice_req = NewInvoiceRequest {
+        x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
+        chain: "Bitcoin".to_string(),
+        network: "testnet".to_string(),
+        currency_code: "BTC".to_string(),
+        amount: "0.0034".to_string(),
+        description: "Create an invoice on Bitcoin test".to_string(),
+    };
+
+    for _ in 0..10 {
+        let grpc_req = Request::new(invoice_req.clone());
+        invoice_service.create_invoice(grpc_req).await.unwrap();
+    }
+
+    let get_invoices_req = GetInvoicesRequest {
+        x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
+    };
+    let invoices_req = Request::new(get_invoices_req);
+    let invoices_res = invoice_service
+        .get_invoices(invoices_req)
+        .await
+        .expect("failed to fetch invoices");
+
+    let invoices = invoices_res.into_inner().invoices;
+
+    assert_eq!(invoices.len(), 10);
 }
