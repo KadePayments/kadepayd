@@ -10,7 +10,7 @@ use kadepayd::wallet::wallet_service_server::WalletService;
 use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
-use tonic::{Request, Response};
+use tonic::Request;
 use uuid::Uuid;
 
 #[tokio::test]
