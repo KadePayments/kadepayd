@@ -5,8 +5,8 @@ fn main() {
         .build_transport(true)
         .compile_protos(
             &[
-                "protos/kadepay/v1/services/invoice.proto",
-                "protos/kadepay/v1/services/wallet.proto",
+                "protos/kadepay/v1/services/invoice/invoice.proto",
+                "protos/kadepay/v1/services/wallet/wallet.proto",
             ],
             &["protos"],
         );
