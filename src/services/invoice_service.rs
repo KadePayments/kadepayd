@@ -25,8 +25,8 @@ impl KadeInvoiceService {
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     x_pub_key_id UUID NOT NULL,
     child_key_index INT NOT NULL CHECK(child_key_index >= 0 AND child_key_index <= 2147483647),
-    amount NUMERIC(24, 8) NOT NULL,
-    currency_code VARCHAR(3) NOT NULL,
+    amount NUMERIC(24) NOT NULL,
+    currency_code VARCHAR(4) NOT NULL,
     chain VARCHAR(8) NOT NULL,
     network VARCHAR(20) NOT NULL,
     address VARCHAR(150) NOT NULL UNIQUE,
@@ -259,6 +259,13 @@ impl KadeInvoiceService {
                 ));
             }
         };
+
+        if amount.scale() > 0 {
+            return Err((
+                Status::invalid_argument("Amount should be in SATS"),
+                Some((x_pub_key_id, new_child_key_index)),
+            ));
+        }
 
         let invoice_row = match self
             .storage
