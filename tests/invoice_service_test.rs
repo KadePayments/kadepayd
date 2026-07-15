@@ -41,8 +41,8 @@ async fn should_create_an_onchain_invoice_successfully() {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
         chain: "Bitcoin".to_string(),
         network: "testnet".to_string(),
-        currency_code: "BTC".to_string(),
-        amount: "0.0034".to_string(),
+        currency_code: "SATS".to_string(),
+        amount: "34000000".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
     };
 
@@ -58,13 +58,13 @@ async fn should_create_an_onchain_invoice_successfully() {
         new_invoice_res.x_pub_key_id,
         new_wallet_res.x_pub_key_id.to_string()
     );
-    assert_eq!(new_invoice_res.amount, "0.00340000");
+    assert_eq!(new_invoice_res.amount, "34000000");
     assert_eq!(
         new_invoice_res.description,
         "Create an invoice on Bitcoin test"
     );
     assert_eq!(new_invoice_res.chain, "Bitcoin");
-    assert_eq!(new_invoice_res.currency_code, "BTC");
+    assert_eq!(new_invoice_res.currency_code, "SATS");
     assert!(
         !new_invoice_res.address.is_empty(),
         "expect a non-empty invoice address"
@@ -74,6 +74,7 @@ async fn should_create_an_onchain_invoice_successfully() {
     assert_eq!(new_invoice_res.status, "pending");
     assert!(new_invoice_res.created_at > 0)
 }
+
 #[tokio::test]
 async fn should_create_an_offchain_invoice_successfully() {
     let storage = Arc::new(Storage::new(true).await.expect("storage creation failed"));
@@ -102,8 +103,8 @@ async fn should_create_an_offchain_invoice_successfully() {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
         chain: "Arkade".to_string(),
         network: "testnet".to_string(),
-        currency_code: "BTC".to_string(),
-        amount: "0.0034".to_string(),
+        currency_code: "SATS".to_string(),
+        amount: "34000000".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
     };
 
@@ -119,13 +120,13 @@ async fn should_create_an_offchain_invoice_successfully() {
         new_invoice_res.x_pub_key_id,
         new_wallet_res.x_pub_key_id.to_string()
     );
-    assert_eq!(new_invoice_res.amount, "0.00340000");
+    assert_eq!(new_invoice_res.amount, "34000000");
     assert_eq!(
         new_invoice_res.description,
         "Create an invoice on Bitcoin test"
     );
     assert_eq!(new_invoice_res.chain, "Arkade");
-    assert_eq!(new_invoice_res.currency_code, "BTC");
+    assert_eq!(new_invoice_res.currency_code, "SATS");
     assert!(
         !new_invoice_res.address.is_empty(),
         "expect a non-empty invoice address"
@@ -166,8 +167,8 @@ async fn should_fail_creating_an_invoice_with_unmatching_network_to_ark_network(
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
         chain: "Arkade".to_string(),
         network: "regtest".to_string(),
-        currency_code: "BTC".to_string(),
-        amount: "0.0034".to_string(),
+        currency_code: "SATS".to_string(),
+        amount: "34000000".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
     };
 
@@ -217,8 +218,8 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
             x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
             chain: "Bitcoin".to_string(),
             network: "testnet".to_string(),
-            currency_code: "BTC".to_string(),
-            amount: "0.0034".to_string(),
+            currency_code: "SATS".to_string(),
+            amount: "34000000".to_string(),
             description: "Create an invoice on Bitcoin test".to_string(),
         };
 
@@ -234,13 +235,13 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
             new_invoice_res.x_pub_key_id,
             new_wallet_res.x_pub_key_id.to_string()
         );
-        assert_eq!(new_invoice_res.amount, "0.00340000");
+        assert_eq!(new_invoice_res.amount, "34000000");
         assert_eq!(
             new_invoice_res.description,
             "Create an invoice on Bitcoin test"
         );
         assert_eq!(new_invoice_res.chain, "Bitcoin");
-        assert_eq!(new_invoice_res.currency_code, "BTC");
+        assert_eq!(new_invoice_res.currency_code, "SATS");
         assert!(
             !new_invoice_res.address.is_empty(),
             "expect a non-empty invoice address"
@@ -308,8 +309,8 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
                 x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
                 chain: "Bitcoin".to_string(),
                 network: "testnet".to_string(),
-                currency_code: "BTC".to_string(),
-                amount: "0.0034".to_string(),
+                currency_code: "SATS".to_string(),
+                amount: "34000000".to_string(),
                 description: "Create an invoice on Bitcoin test".to_string(),
             };
 
@@ -325,13 +326,13 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
                 new_invoice_res.x_pub_key_id,
                 new_wallet_res.x_pub_key_id.to_string()
             );
-            assert_eq!(new_invoice_res.amount, "0.00340000");
+            assert_eq!(new_invoice_res.amount, "34000000");
             assert_eq!(
                 new_invoice_res.description,
                 "Create an invoice on Bitcoin test"
             );
             assert_eq!(new_invoice_res.chain, "Bitcoin");
-            assert_eq!(new_invoice_res.currency_code, "BTC");
+            assert_eq!(new_invoice_res.currency_code, "SATS");
             assert!(
                 !new_invoice_res.address.is_empty(),
                 "expect a non-empty invoice address"
@@ -385,8 +386,8 @@ async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_success
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
         chain: "Bitcoin".to_string(),
         network: "testnet".to_string(),
-        currency_code: "BTC".to_string(),
-        amount: "0.0034".to_string(),
+        currency_code: "SATS".to_string(),
+        amount: "34000000".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
     };
 
@@ -449,8 +450,8 @@ async fn should_clean_up_unused_child_key_indices_after_failure() {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
         chain: "Bitcoin".to_string(),
         network: "testnet".to_string(),
-        currency_code: "BTC".to_string(),
-        amount: "0.0034BTC".to_string(),
+        currency_code: "SATS".to_string(),
+        amount: "34000000SATS".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
     };
 
@@ -512,8 +513,8 @@ async fn should_fetch_invoices_successfully() {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
         chain: "Bitcoin".to_string(),
         network: "testnet".to_string(),
-        currency_code: "BTC".to_string(),
-        amount: "0.0034".to_string(),
+        currency_code: "SATS".to_string(),
+        amount: "34000000".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
     };
 
