@@ -267,6 +267,13 @@ impl KadeInvoiceService {
             ));
         }
 
+        if amount.is_zero() || amount.is_sign_negative() {
+            return Err((
+                Status::invalid_argument("Amount cannot be zero or negative"),
+                Some((x_pub_key_id, new_child_key_index)),
+            ));
+        }
+
         let invoice_row = match self
             .storage
             .query_one(
