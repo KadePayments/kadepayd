@@ -14,12 +14,7 @@ use tonic::Request;
 use uuid::Uuid;
 
 fn get_invoice_metadata() -> Vec<String> {
-    let mut metadata = HashMap::new();
-    metadata.insert("product_name", "name");
-    metadata
-        .iter()
-        .map(|(k, v)| format!("{}: {}", k.to_string(), v))
-        .collect()
+    vec!["product_name: name".to_string()]
 }
 
 #[tokio::test]
