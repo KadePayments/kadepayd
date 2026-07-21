@@ -31,7 +31,8 @@ impl KadeInvoiceService {
     network VARCHAR(20) NOT NULL,
     address VARCHAR(150) NOT NULL UNIQUE,
     status VARCHAR(10) NOT NULL,
-    description VARCHAR(255) NOT NULL,
+    description VARCHAR(255),
+    metadata VARCHAR[],
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     CONSTRAINT unique_parent_and_child UNIQUE (x_pub_key_id, child_key_index)
     );";
@@ -51,8 +52,9 @@ impl KadeInvoiceService {
     address,
     status,
     description,
+    metadata,
     created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;";
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *;";
     pub const INSERT_CHILD_INDEX: &'static str =
         "INSERT INTO child_key_indices (x_pub_key_id, child_key_index) VALUES ($1, $2)";
     pub const DELETE_CHILD_INDEX: &'static str =
@@ -288,6 +290,7 @@ impl KadeInvoiceService {
                     &address,
                     &status,
                     &invoice.description,
+                    &invoice.metadata,
                     &created_at,
                 ],
             )

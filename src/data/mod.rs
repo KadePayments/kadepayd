@@ -15,6 +15,7 @@ impl InvoiceResponse {
         let created_at: DateTime<Utc> = row.get("created_at");
         let amount: Decimal = row.get("amount");
         let child_key_index: i32 = row.get("child_key_index");
+        let metadata: Vec<String> = row.get("metadata");
         Self {
             id: id.to_string(),
             x_pub_key_id: x_pub_key_id.to_string(),
@@ -25,6 +26,7 @@ impl InvoiceResponse {
             address: row.get("address"),
             status: row.get("status"),
             description: row.get("description"),
+            metadata,
             created_at: created_at.timestamp(),
             child_key_index,
         }

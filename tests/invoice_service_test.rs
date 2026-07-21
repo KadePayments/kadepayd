@@ -7,11 +7,20 @@ use kadepayd::services::invoice_service::KadeInvoiceService;
 use kadepayd::services::wallet_service::KadeWalletService;
 use kadepayd::wallet::NewWalletRequest;
 use kadepayd::wallet::wallet_service_server::WalletService;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::sync::Arc;
 use tonic::Request;
 use uuid::Uuid;
+
+fn get_invoice_metadata() -> Vec<String> {
+    let mut metadata = HashMap::new();
+    metadata.insert("product_name", "name");
+    metadata
+        .iter()
+        .map(|(k, v)| format!("{}: {}", k.to_string(), v))
+        .collect()
+}
 
 #[tokio::test]
 async fn should_create_an_onchain_invoice_successfully() {
@@ -44,6 +53,7 @@ async fn should_create_an_onchain_invoice_successfully() {
         currency_code: "SATS".to_string(),
         amount: "34000000".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
+        metadata: get_invoice_metadata(),
     };
 
     let grpc_req = Request::new(invoice_req);
@@ -63,6 +73,7 @@ async fn should_create_an_onchain_invoice_successfully() {
         new_invoice_res.description,
         "Create an invoice on Bitcoin test"
     );
+    assert_eq!(new_invoice_res.metadata, get_invoice_metadata());
     assert_eq!(new_invoice_res.chain, "Bitcoin");
     assert_eq!(new_invoice_res.currency_code, "SATS");
     assert!(
@@ -106,6 +117,7 @@ async fn should_create_an_offchain_invoice_successfully() {
         currency_code: "SATS".to_string(),
         amount: "34000000".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
+        metadata: get_invoice_metadata(),
     };
 
     let grpc_req = Request::new(invoice_req);
@@ -125,6 +137,7 @@ async fn should_create_an_offchain_invoice_successfully() {
         new_invoice_res.description,
         "Create an invoice on Bitcoin test"
     );
+    assert_eq!(new_invoice_res.metadata, get_invoice_metadata());
     assert_eq!(new_invoice_res.chain, "Arkade");
     assert_eq!(new_invoice_res.currency_code, "SATS");
     assert!(
@@ -170,6 +183,7 @@ async fn should_fail_creating_an_invoice_with_unmatching_network_to_ark_network(
         currency_code: "SATS".to_string(),
         amount: "34000000".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
+        metadata: get_invoice_metadata(),
     };
 
     let grpc_req = Request::new(invoice_req);
@@ -178,7 +192,6 @@ async fn should_fail_creating_an_invoice_with_unmatching_network_to_ark_network(
 
     assert!(new_invoice_res.is_err());
     let status = new_invoice_res.err().unwrap();
-    eprintln!("{:?}", status);
     assert_eq!(status.code(), tonic::Code::InvalidArgument);
     assert_eq!(
         status.message(),
@@ -221,6 +234,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
             currency_code: "SATS".to_string(),
             amount: "34000000".to_string(),
             description: "Create an invoice on Bitcoin test".to_string(),
+            metadata: get_invoice_metadata(),
         };
 
         let grpc_req = Request::new(invoice_req);
@@ -312,6 +326,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
                 currency_code: "SATS".to_string(),
                 amount: "34000000".to_string(),
                 description: "Create an invoice on Bitcoin test".to_string(),
+                metadata: get_invoice_metadata(),
             };
 
             let grpc_req = Request::new(invoice_req);
@@ -389,6 +404,7 @@ async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_success
         currency_code: "SATS".to_string(),
         amount: "34000000".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
+        metadata: get_invoice_metadata(),
     };
 
     let grpc_req = Request::new(invoice_req.clone());
@@ -453,6 +469,7 @@ async fn should_clean_up_unused_child_key_indices_after_failure() {
         currency_code: "SATS".to_string(),
         amount: "34000000SATS".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
+        metadata: get_invoice_metadata(),
     };
 
     let grpc_req = Request::new(invoice_req.clone());
@@ -516,6 +533,7 @@ async fn should_fetch_invoices_successfully() {
         currency_code: "SATS".to_string(),
         amount: "34000000".to_string(),
         description: "Create an invoice on Bitcoin test".to_string(),
+        metadata: get_invoice_metadata(),
     };
 
     for _ in 0..10 {
