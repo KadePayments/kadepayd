@@ -15,6 +15,7 @@ message NewInvoiceRequest {
     string currency_code = 4;
     string amount = 5;
     string description = 6;
+    repeated string metadata = 7;
 }
 
 message InvoiceResponse {
@@ -29,6 +30,7 @@ message InvoiceResponse {
     string description = 9;
     string status = 10;
     int32 child_key_index = 11;
+    repeated string metadata = 12;
 }
 
 message GetInvoicesRequest {

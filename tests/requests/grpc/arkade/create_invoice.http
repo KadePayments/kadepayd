@@ -7,6 +7,7 @@ Content-Type: application/json
   "chain": "Arkade",
   "network": "signet",
   "currency_code": "SATS",
-  "amount": "400000000",
-  "description": "Test invoice creation on Arkade"
+  "amount": "670000000",
+  "description": "Test invoice creation on Arkade",
+  "metadata": ["product_name: name"]
 }
