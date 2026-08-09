@@ -9,6 +9,7 @@ use crate::services::wallet_service::KadeWalletService;
 use bitcoin::Network;
 use chrono::Utc;
 use rust_decimal::Decimal;
+use serde_json::to_value;
 use std::str::FromStr;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
@@ -32,7 +33,7 @@ impl KadeInvoiceService {
     address VARCHAR(150) NOT NULL UNIQUE,
     status VARCHAR(10) NOT NULL,
     description VARCHAR(255),
-    metadata VARCHAR[],
+    metadata JSONB,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     CONSTRAINT unique_parent_and_child UNIQUE (x_pub_key_id, child_key_index)
     );";
@@ -275,6 +276,15 @@ impl KadeInvoiceService {
                 Some((x_pub_key_id, new_child_key_index)),
             ));
         }
+        let metadata = match to_value(invoice.metadata) {
+            Ok(metadata) => metadata,
+            Err(_) => {
+                return Err((
+                    Status::invalid_argument("Invalid metadata"),
+                    Some((x_pub_key_id, new_child_key_index)),
+                ));
+            }
+        };
 
         let invoice_row = match self
             .storage
@@ -290,7 +300,7 @@ impl KadeInvoiceService {
                     &address,
                     &status,
                     &invoice.description,
-                    &invoice.metadata,
+                    &metadata,
                     &created_at,
                 ],
             )
@@ -304,7 +314,11 @@ impl KadeInvoiceService {
             }
         };
 
-        Ok(Response::new(InvoiceResponse::from_row(&invoice_row)))
+        let response = match InvoiceResponse::from_row(&invoice_row) {
+            Ok(response) => response,
+            Err(status) => return Err((status, Some((x_pub_key_id, new_child_key_index)))),
+        };
+        Ok(Response::new(response))
     }
 }
 
@@ -346,19 +360,28 @@ impl InvoiceService for KadeInvoiceService {
             Err(_) => return Err(Status::invalid_argument("Invalid x-pub-key id")),
         };
 
-        let invoices: Vec<InvoiceResponse> = match self
+        let invoices: Vec<InvoiceResponse> = match match self
             .storage
             .query(Self::SELECT_BY_WALLET, &[&x_pub_key_id])
             .await
         {
             Ok(rows) => rows
                 .iter()
-                .map(|row| InvoiceResponse::from_row(row))
+                .map(|row| {
+                    let response = match InvoiceResponse::from_row(&row) {
+                        Ok(response) => response,
+                        Err(status) => return Err(status),
+                    };
+                    Ok(response)
+                })
                 .collect(),
             Err(error) => {
                 let status = handle_storage_error(error, "");
                 return Err(status);
             }
+        } {
+            Ok(invoices) => invoices,
+            Err(status) => return Err(status),
         };
 
         let invoices_response = GetInvoicesResponse { invoices };

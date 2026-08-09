@@ -13,8 +13,10 @@ use std::sync::Arc;
 use tonic::Request;
 use uuid::Uuid;
 
-fn get_invoice_metadata() -> Vec<String> {
-    vec!["product_name: name".to_string()]
+fn get_invoice_metadata() -> HashMap<String, String> {
+    let mut meta = HashMap::new();
+    meta.insert("product_name".to_string(), "name".to_string());
+    meta
 }
 
 #[tokio::test]

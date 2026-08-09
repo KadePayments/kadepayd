@@ -2,21 +2,31 @@ use crate::invoice::InvoiceResponse;
 use crate::wallet::NewWalletResponse;
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
+use serde_json::from_value;
+use std::collections::HashMap;
 use tokio_postgres::Row;
+use tonic::Status;
 use uuid::Uuid;
 
 pub mod errors;
 pub mod storage;
 
 impl InvoiceResponse {
-    pub fn from_row(row: &Row) -> Self {
+    pub fn from_row(row: &Row) -> Result<Self, Status> {
         let id: Uuid = row.get("id");
         let x_pub_key_id: Uuid = row.get("x_pub_key_id");
         let created_at: DateTime<Utc> = row.get("created_at");
         let amount: Decimal = row.get("amount");
         let child_key_index: i32 = row.get("child_key_index");
-        let metadata: Vec<String> = row.get("metadata");
-        Self {
+        let metadata_value: Option<serde_json::Value> = row.get("metadata");
+        let metadata: HashMap<String, String> = match metadata_value {
+            Some(metadata) => match from_value(metadata) {
+                Ok(metadata) => metadata,
+                Err(_) => return Err(Status::internal("Failed to read invoice metadata")),
+            },
+            None => HashMap::new(),
+        };
+        Ok(Self {
             id: id.to_string(),
             x_pub_key_id: x_pub_key_id.to_string(),
             chain: row.get("chain"),
@@ -29,7 +39,7 @@ impl InvoiceResponse {
             metadata,
             created_at: created_at.timestamp(),
             child_key_index,
-        }
+        })
     }
 }
 
