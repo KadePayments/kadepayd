@@ -18,9 +18,13 @@ impl InvoiceResponse {
         let created_at: DateTime<Utc> = row.get("created_at");
         let amount: Decimal = row.get("amount");
         let child_key_index: i32 = row.get("child_key_index");
-        let metadata: HashMap<String, String> = match from_value(row.get("metadata")) {
-            Ok(metadata) => metadata,
-            Err(_) => return Err(Status::internal("Failed to read invoice metadata")),
+        let metadata_value: Option<serde_json::Value> = row.get("metadata");
+        let metadata: HashMap<String, String> = match metadata_value {
+            Some(metadata) => match from_value(metadata) {
+                Ok(metadata) => metadata,
+                Err(_) => return Err(Status::internal("Failed to read invoice metadata")),
+            },
+            None => HashMap::new(),
         };
         Ok(Self {
             id: id.to_string(),

@@ -370,7 +370,7 @@ impl InvoiceService for KadeInvoiceService {
                 .map(|row| {
                     let response = match InvoiceResponse::from_row(&row) {
                         Ok(response) => response,
-                        _ => return Err(Status::invalid_argument("Invalid row")),
+                        Err(status) => return Err(status),
                     };
                     Ok(response)
                 })
