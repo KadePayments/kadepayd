@@ -9,6 +9,7 @@ use crate::services::wallet_service::KadeWalletService;
 use bitcoin::Network;
 use chrono::Utc;
 use rust_decimal::Decimal;
+use serde_json::to_value;
 use std::str::FromStr;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
@@ -32,7 +33,7 @@ impl KadeInvoiceService {
     address VARCHAR(150) NOT NULL UNIQUE,
     status VARCHAR(10) NOT NULL,
     description VARCHAR(255),
-    metadata VARCHAR[],
+    metadata JSONB,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     CONSTRAINT unique_parent_and_child UNIQUE (x_pub_key_id, child_key_index)
     );";
@@ -275,6 +276,15 @@ impl KadeInvoiceService {
                 Some((x_pub_key_id, new_child_key_index)),
             ));
         }
+        let metadata = match to_value(invoice.metadata) {
+            Ok(metadata) => metadata,
+            Err(_) => {
+                return Err((
+                    Status::invalid_argument("Invalid metadata"),
+                    Some((x_pub_key_id, new_child_key_index)),
+                ));
+            }
+        };
 
         let invoice_row = match self
             .storage
@@ -290,7 +300,7 @@ impl KadeInvoiceService {
                     &address,
                     &status,
                     &invoice.description,
-                    &invoice.metadata,
+                    &metadata,
                     &created_at,
                 ],
             )

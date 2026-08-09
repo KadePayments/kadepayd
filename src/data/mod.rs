@@ -2,6 +2,8 @@ use crate::invoice::InvoiceResponse;
 use crate::wallet::NewWalletResponse;
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
+use serde_json::from_value;
+use std::collections::HashMap;
 use tokio_postgres::Row;
 use uuid::Uuid;
 
@@ -15,7 +17,8 @@ impl InvoiceResponse {
         let created_at: DateTime<Utc> = row.get("created_at");
         let amount: Decimal = row.get("amount");
         let child_key_index: i32 = row.get("child_key_index");
-        let metadata: Vec<String> = row.get("metadata");
+        let metadata: HashMap<String, String> =
+            from_value(row.get("metadata")).unwrap_or_else(|_| HashMap::new());
         Self {
             id: id.to_string(),
             x_pub_key_id: x_pub_key_id.to_string(),
