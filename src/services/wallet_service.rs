@@ -1,11 +1,11 @@
 use crate::data::errors::handle_storage_error;
 use crate::data::storage::Storage;
 use crate::wallet::wallet_service_server::WalletService;
-use crate::wallet::{NewWalletRequest, NewWalletResponse};
+use crate::wallet::{NewWalletRequest, NewWalletResponse, WalletIdRequest, WalletIdResponse};
 use bitcoin::bip32::Xpub;
 use std::str::FromStr;
 use std::sync::Arc;
-use tokio_postgres::Transaction;
+use tokio_postgres::{Row, Transaction};
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
 
@@ -23,6 +23,8 @@ impl KadeWalletService {
     const INSERT: &'static str = "INSERT INTO wallets (x_pub_key) VALUES ($1) RETURNING id;";
 
     const SELECT_BY_ID: &'static str = "SELECT * FROM wallets WHERE id = $1 FOR UPDATE;";
+
+    const SELECT_BY_PUBKEY: &'static str = "SELECT * FROM wallets WHERE x_pub_key = $1;";
 
     pub fn new(storage: Arc<Storage>) -> Self {
         Self { storage }
@@ -94,5 +96,31 @@ impl WalletService for KadeWalletService {
             }
         };
         Ok(Response::new(NewWalletResponse::from_row(wallet_row)))
+    }
+    async fn get_wallet_id(
+        &self,
+        request: Request<WalletIdRequest>,
+    ) -> Result<Response<WalletIdResponse>, Status> {
+        let input = request.into_inner();
+        let x_pub_key = match Xpub::from_str(input.x_pub_key.as_str()) {
+            Ok(x_pub) => x_pub,
+            Err(_) => return Err(Status::invalid_argument("Invalid x-pubkey")),
+        };
+
+        let wallet_row = match self
+            .storage
+            .query_opt(Self::SELECT_BY_PUBKEY, &[&x_pub_key.to_string()])
+            .await
+        {
+            Ok(row_option) => match row_option {
+                Some(row) => row,
+                None => return Err(Status::not_found("Pubkey not found")),
+            },
+            Err(error) => {
+                let status = handle_storage_error(error, "");
+                return Err(status);
+            }
+        };
+        Ok(Response::new(WalletIdResponse::from_row(wallet_row)))
     }
 }

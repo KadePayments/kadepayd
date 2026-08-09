@@ -4,6 +4,8 @@ package kadepay.v1.services.wallet;
 
 service WalletService {
   rpc CreateWallet(NewWalletRequest) returns (NewWalletResponse) {};
+
+  rpc GetWalletId(WalletIdRequest) returns (WalletIdResponse) {};
 }
 
 message NewWalletRequest {
@@ -12,4 +14,12 @@ message NewWalletRequest {
 
 message NewWalletResponse {
   string x_pub_key_id = 1;
+}
+
+message WalletIdRequest {
+  string x_pub_key = 1;
+}
+
+message WalletIdResponse {
+  string wallet_id = 1;
 }

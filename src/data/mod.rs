@@ -1,5 +1,5 @@
 use crate::invoice::InvoiceResponse;
-use crate::wallet::NewWalletResponse;
+use crate::wallet::{NewWalletResponse, WalletIdResponse};
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde_json::from_value;
@@ -48,6 +48,15 @@ impl NewWalletResponse {
         let x_pub_key_id: Uuid = row.get("id");
         Self {
             x_pub_key_id: x_pub_key_id.to_string(),
+        }
+    }
+}
+
+impl WalletIdResponse {
+    pub fn from_row(row: Row) -> Self {
+        let wallet_id: Uuid = row.get("id");
+        Self {
+            wallet_id: wallet_id.to_string(),
         }
     }
 }

@@ -1,4 +1,4 @@
-GRPC localhost:50051/kadepay.v1.services.wallet.WalletService/CreateWallet
+GRPC localhost:50051/kadepay.v1.services.wallet.WalletService/GetWalletId
 Content-Type: application/json
 
 {
