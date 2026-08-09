@@ -5,21 +5,24 @@ use rust_decimal::Decimal;
 use serde_json::from_value;
 use std::collections::HashMap;
 use tokio_postgres::Row;
+use tonic::Status;
 use uuid::Uuid;
 
 pub mod errors;
 pub mod storage;
 
 impl InvoiceResponse {
-    pub fn from_row(row: &Row) -> Self {
+    pub fn from_row(row: &Row) -> Result<Self, Status> {
         let id: Uuid = row.get("id");
         let x_pub_key_id: Uuid = row.get("x_pub_key_id");
         let created_at: DateTime<Utc> = row.get("created_at");
         let amount: Decimal = row.get("amount");
         let child_key_index: i32 = row.get("child_key_index");
-        let metadata: HashMap<String, String> =
-            from_value(row.get("metadata")).unwrap_or_else(|_| HashMap::new());
-        Self {
+        let metadata: HashMap<String, String> = match from_value(row.get("metadata")) {
+            Ok(metadata) => metadata,
+            Err(_) => return Err(Status::internal("Failed to read invoice metadata")),
+        };
+        Ok(Self {
             id: id.to_string(),
             x_pub_key_id: x_pub_key_id.to_string(),
             chain: row.get("chain"),
@@ -32,7 +35,7 @@ impl InvoiceResponse {
             metadata,
             created_at: created_at.timestamp(),
             child_key_index,
-        }
+        })
     }
 }
 

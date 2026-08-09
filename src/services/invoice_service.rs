@@ -314,7 +314,11 @@ impl KadeInvoiceService {
             }
         };
 
-        Ok(Response::new(InvoiceResponse::from_row(&invoice_row)))
+        let response = match InvoiceResponse::from_row(&invoice_row) {
+            Ok(response) => response,
+            Err(status) => return Err((status, Some((x_pub_key_id, new_child_key_index)))),
+        };
+        Ok(Response::new(response))
     }
 }
 
@@ -356,19 +360,28 @@ impl InvoiceService for KadeInvoiceService {
             Err(_) => return Err(Status::invalid_argument("Invalid x-pub-key id")),
         };
 
-        let invoices: Vec<InvoiceResponse> = match self
+        let invoices: Vec<InvoiceResponse> = match match self
             .storage
             .query(Self::SELECT_BY_WALLET, &[&x_pub_key_id])
             .await
         {
             Ok(rows) => rows
                 .iter()
-                .map(|row| InvoiceResponse::from_row(row))
+                .map(|row| {
+                    let response = match InvoiceResponse::from_row(&row) {
+                        Ok(response) => response,
+                        _ => return Err(Status::invalid_argument("Invalid row")),
+                    };
+                    Ok(response)
+                })
                 .collect(),
             Err(error) => {
                 let status = handle_storage_error(error, "");
                 return Err(status);
             }
+        } {
+            Ok(invoices) => invoices,
+            Err(status) => return Err(status),
         };
 
         let invoices_response = GetInvoicesResponse { invoices };
