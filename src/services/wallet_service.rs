@@ -5,7 +5,7 @@ use crate::wallet::{NewWalletRequest, NewWalletResponse, WalletIdRequest, Wallet
 use bitcoin::bip32::Xpub;
 use std::str::FromStr;
 use std::sync::Arc;
-use tokio_postgres::Transaction;
+use tokio_postgres::{Row, Transaction};
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
 
@@ -109,12 +109,15 @@ impl WalletService for KadeWalletService {
 
         let wallet_row = match self
             .storage
-            .query_one(Self::SELECT_BY_PUBKEY, &[&x_pub_key.to_string()])
+            .query_opt(Self::SELECT_BY_PUBKEY, &[&x_pub_key.to_string()])
             .await
         {
-            Ok(row) => row,
+            Ok(row_option) => match row_option {
+                Some(row) => row,
+                None => return Err(Status::not_found("Pubkey not found")),
+            },
             Err(error) => {
-                let status = handle_storage_error(error, "Pubkey not found");
+                let status = handle_storage_error(error, "");
                 return Err(status);
             }
         };
