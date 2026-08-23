@@ -34,12 +34,6 @@ impl Engine {
         let url = server_config.api_url.clone();
         let router = routes(url).await.merge(grpc_router);
 
-        /*Server::builder()
-        .add_service(invoice_server)
-        .add_service(wallet_server)
-        .serve(server_config.kadepay_server_addr)
-        .await?;*/
-
         let listener = tokio::net::TcpListener::bind(server_config.kadepay_server_addr).await?;
         serve(listener, router).await?;
 
