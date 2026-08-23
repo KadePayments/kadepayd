@@ -7,12 +7,9 @@ use crate::services::invoice_service::KadeInvoiceService;
 use crate::services::wallet_service::KadeWalletService;
 use crate::wallet::wallet_service_server::WalletServiceServer;
 use axum::serve;
-use std::net::SocketAddr;
-use std::str::FromStr;
 use std::sync::Arc;
 use tonic::codec::CompressionEncoding::Gzip;
 use tonic::service::Routes;
-use tonic::transport::Server;
 
 pub struct Engine;
 impl Engine {
