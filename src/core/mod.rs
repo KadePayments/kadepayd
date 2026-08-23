@@ -94,13 +94,17 @@ pub fn sats_to_btc(sats: u64) -> f64 {
     btc
 }
 
-pub fn format_amount(sats: &str) -> String {
-    let sats = sats.parse::<u64>().unwrap();
-    let number_of_digits = count_digits(sats);
-    if number_of_digits > 5 {
-        format!("₿{}", sats_to_btc(sats))
+pub fn format_amount(amount: &str, currency_code: &str) -> String {
+    if currency_code == "SATS" {
+        let sats = amount.parse::<u64>().unwrap();
+        let number_of_digits = count_digits(sats);
+        if number_of_digits > 5 {
+            format!("₿{}", sats_to_btc(sats))
+        } else {
+            format!("{} SATS", sats.to_string())
+        }
     } else {
-        format!("{} SATS", sats.to_string())
+        format!("{amount} {currency_code}")
     }
 }
 

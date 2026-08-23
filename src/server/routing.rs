@@ -3,13 +3,15 @@ use crate::data::{NewInvoiceQuery, NewInvoiceResponse, NewPaymentRequest};
 use crate::invoice::GetInvoiceRequest;
 use crate::invoice::invoice_service_client::InvoiceServiceClient;
 use axum::extract::{Query, State};
-use axum::http::Uri;
+use axum::http::{Method, Uri};
 use axum::response::{Html, IntoResponse};
 
+use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use std::str::FromStr;
 use tonic::Request;
+use tonic::codegen::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 
@@ -25,7 +27,10 @@ pub async fn routes(url: String) -> Router {
     let invoice_client = InvoiceServiceClient::new(grpc_channel);
     let app_state = AppState { invoice_client };
 
-    let cors = CorsLayer::new().allow_origin(Any).allow_headers(Any);
+    let cors = CorsLayer::new()
+        .allow_methods([Method::POST, Method::GET])
+        .allow_headers([CONTENT_TYPE, AUTHORIZATION, ACCESS_CONTROL_ALLOW_ORIGIN])
+        .allow_origin(Any);
 
     Router::new()
         .route("/pay/invoice", post(new_payment))
@@ -64,7 +69,7 @@ async fn new_invoice_page(
 
     let address = invoice.address.as_str();
     let status = invoice.status.to_uppercase();
-    let amount = format_amount(invoice.amount.as_str());
+    let amount = format_amount(invoice.amount.as_str(), invoice.currency_code.as_str());
 
     let qr_code = svg_qr_code(address);
 
