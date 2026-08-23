@@ -403,11 +403,12 @@ impl InvoiceService for KadeInvoiceService {
             .await
         {
             Ok(row) => row,
-            Err(_) => {
-                return Err(Status::not_found(format!(
-                    "Invoice {} not found",
-                    invoice_id
-                )));
+            Err(error) => {
+                return if error.to_string().contains("0 rows") {
+                    Err(Status::not_found("Invoice not found".to_string()))
+                } else {
+                    Err(handle_storage_error(error, ""))
+                };
             }
         };
         let invoice = InvoiceResponse::from_row(&invoice_row)?;
