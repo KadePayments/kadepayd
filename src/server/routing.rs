@@ -33,6 +33,7 @@ pub async fn routes(url: String) -> Router {
         .allow_origin(Any);
 
     Router::new()
+        .route("/", get(""))
         .route("/pay/invoice", post(new_payment))
         .route("/pay/invoice", get(new_invoice_page))
         .nest_service("/static", ServeDir::new("assets"))
