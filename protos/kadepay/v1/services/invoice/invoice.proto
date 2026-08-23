@@ -6,6 +6,8 @@ service InvoiceService {
     rpc CreateInvoice(NewInvoiceRequest) returns (InvoiceResponse) {}
 
     rpc GetInvoices(GetInvoicesRequest) returns (GetInvoicesResponse) {}
+
+    rpc GetInvoice(GetInvoiceRequest) returns (InvoiceResponse) {}
 }
 
 message NewInvoiceRequest {
@@ -39,4 +41,8 @@ message GetInvoicesRequest {
 
 message GetInvoicesResponse {
     repeated InvoiceResponse invoices = 1;
+}
+
+message GetInvoiceRequest {
+    string id = 1;
 }

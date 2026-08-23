@@ -3,7 +3,9 @@ use crate::core::arkade::ark_client::ArkadeClient;
 use crate::data::errors::handle_storage_error;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceService;
-use crate::invoice::{GetInvoicesRequest, GetInvoicesResponse, InvoiceResponse, NewInvoiceRequest};
+use crate::invoice::{
+    GetInvoiceRequest, GetInvoicesRequest, GetInvoicesResponse, InvoiceResponse, NewInvoiceRequest,
+};
 use crate::server::config::Config;
 use crate::services::wallet_service::KadeWalletService;
 use bitcoin::Network;
@@ -386,5 +388,29 @@ impl InvoiceService for KadeInvoiceService {
 
         let invoices_response = GetInvoicesResponse { invoices };
         Ok(Response::new(invoices_response))
+    }
+    async fn get_invoice(
+        &self,
+        request: Request<GetInvoiceRequest>,
+    ) -> Result<Response<InvoiceResponse>, Status> {
+        let invoice_id = match Uuid::from_str(request.into_inner().id.as_str()) {
+            Ok(invoice_id) => invoice_id,
+            Err(_) => return Err(Status::invalid_argument("Invalid invoice id")),
+        };
+        let invoice_row = match self
+            .storage
+            .query_one(Self::SELECT_BY_ID, &[&invoice_id])
+            .await
+        {
+            Ok(row) => row,
+            Err(_) => {
+                return Err(Status::not_found(format!(
+                    "Invoice {} not found",
+                    invoice_id
+                )));
+            }
+        };
+        let invoice = InvoiceResponse::from_row(&invoice_row)?;
+        Ok(Response::new(invoice))
     }
 }
