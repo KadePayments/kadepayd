@@ -68,7 +68,7 @@ async fn new_invoice_page(
                                 <li style=\"display:inline-block; \"><p style=\"width:fit-content; font-size:1.3rem;\">2000 SATS</p></li>
                                 <li style=\"display:inline-block; \"><p style=\"width:fit-content; font-size:1.3rem;\">Pending</p></li>
                             </ul>
-                            <div>{}</div>
+                            <div style=\"border-radius:5px;\">{}</div>
                             <div  style=\"background:#F6FBF2; margin: 20px; height: fit-content; padding:10px; border-radius:5px;\">
                                 <p style=\"overflow-wrap:break-word; height: fit-content; border-radius:8px;\">tb1pw2nqu22jj7qyvtaeje7tyzutgcs935lakt8g30pw27wjv57mfg0srxqc7r</p>
                                 <img src=\"/static/icons/copy.svg\"  style = \"color: #F9FAEF; background: #EBEFE7; padding: 12px; width: 24px; height: 24px; border-radius: 24px;\"/>

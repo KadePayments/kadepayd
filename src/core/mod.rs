@@ -82,7 +82,9 @@ pub fn svg_qr_code(data: &str) -> String {
         logo_size,
     );
 
-    let final_svg = svg_string.replace("</svg>", &overlay_tag);
-
+    let final_svg = svg_string.replace("</svg>", &overlay_tag).replace(
+        "<rect x=\"0\" y=\"0\"",
+        "<rect x=\"0\" y=\"0\" rx=\"3%\" ry=\"3%\"",
+    );
     final_svg
 }
