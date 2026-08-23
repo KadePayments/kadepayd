@@ -1,12 +1,15 @@
-use crate::core::svg_qr_code;
+use crate::core::{format_amount, svg_qr_code};
 use crate::data::{NewInvoiceQuery, NewInvoiceResponse, NewPaymentRequest};
+use crate::invoice::GetInvoiceRequest;
 use crate::invoice::invoice_service_client::InvoiceServiceClient;
 use axum::extract::{Query, State};
 use axum::http::Uri;
 use axum::response::{Html, IntoResponse};
+
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use std::str::FromStr;
+use tonic::Request;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 
@@ -51,9 +54,19 @@ async fn new_invoice_page(
     State(state): State<AppState>,
     Query(params): Query<NewInvoiceQuery>,
 ) -> Html<String> {
-    let id = &params.id;
+    let invoice_req = GetInvoiceRequest { id: params.id };
+    let invoice_grpc_req = Request::new(invoice_req);
+    let mut invoice_client = state.invoice_client;
+    let invoice = match invoice_client.get_invoice(invoice_grpc_req).await {
+        Ok(invoice) => invoice.into_inner(),
+        Err(_) => return Html("Could not get invoice".to_string()),
+    };
 
-    let qr_code = svg_qr_code("tb1pw2nqu22jj7qyvtaeje7tyzutgcs935lakt8g30pw27wjv57mfg0srxqc7r");
+    let address = invoice.address.as_str();
+    let status = invoice.status.to_uppercase();
+    let amount = format_amount(invoice.amount.as_str());
+
+    let qr_code = svg_qr_code(address);
 
     let page = format!(
         "
@@ -76,15 +89,15 @@ async fn new_invoice_page(
                 </head>
                 <body style=\"padding:0; margin:0; background:#F6FBF2; font-family:sans-serif;\">
                     <div style=\"display:flex; justify-content:center; height: 100vh; padding:0;\">
-                        <div style=\"background:#EBEFE7; width:26em; height:fit-content; margin:auto; text-align:center; border-radius: 16px; border: 2px solid #717970;\">
+                        <div style=\"background:#EBEFE7; width:26em; height:fit-content; margin:auto; text-align:center; border-radius: 16px; border: 1px solid #717970;\">
                             <h1>KadePay</h1>
                             <ul style=\"display:flex; flex-direction: row; align-items: center; width:fit-content; gap:120px; padding:0; margin:auto; margin-bottom:20px;\">
-                                <li style=\"display:inline-block; \"><p style=\"width:fit-content; font-size:1.3rem;\">2000 SATS</p></li>
-                                <li style=\"display:inline-block; \"><p style=\"width:fit-content; font-size:1.3rem;\">Pending</p></li>
+                                <li style=\"display:inline-block; \"><p style=\"width:fit-content; font-size:1.3rem;\">{amount}</p></li>
+                                <li style=\"display:inline-block; \"><p style=\"width:fit-content; font-size:1.3rem;\">{status}</p></li>
                             </ul>
-                            <div style=\"border-radius:5px;\">{}</div>
+                            <div style=\"border-radius:5px;\">{qr_code}</div>
                             <div  id=\"address-container\">
-                                <p style=\"overflow-wrap:break-word; height: fit-content; border-radius:8px;\">tb1pw2nqu22jj7qyvtaeje7tyzutgcs935lakt8g30pw27wjv57mfg0srxqc7r</p>
+                                <p style=\"overflow-wrap:break-word; height: fit-content; border-radius:8px;\">{address}</p>
                                 <img src=\"/static/icons/copy.svg\"  style = \"color: #F9FAEF; background: #EBEFE7; padding: 12px; width: 24px; height: 24px; border-radius: 24px;\"/>
                             </div>
                         </div>
@@ -101,8 +114,7 @@ async fn new_invoice_page(
                     </script>
                 </body>
             </html>
-    ",
-        qr_code,
+    "
     );
     Html(page)
 }

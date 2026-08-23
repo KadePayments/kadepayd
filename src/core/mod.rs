@@ -88,3 +88,22 @@ pub fn svg_qr_code(data: &str) -> String {
     );
     final_svg
 }
+
+pub fn sats_to_btc(sats: u64) -> f64 {
+    let btc = sats as f64 / 100_000_000f64;
+    btc
+}
+
+pub fn format_amount(sats: &str) -> String {
+    let sats = sats.parse::<u64>().unwrap();
+    let number_of_digits = count_digits(sats);
+    if number_of_digits > 5 {
+        format!("₿{}", sats_to_btc(sats))
+    } else {
+        format!("{} SATS", sats.to_string())
+    }
+}
+
+fn count_digits(n: u64) -> u32 {
+    n.checked_ilog10().unwrap_or(0) + 1
+}
