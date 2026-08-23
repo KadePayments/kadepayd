@@ -2,7 +2,7 @@ use ark_core::ArkAddress;
 use bitcoin::{Address, Network};
 use kadepayd::data::storage::Storage;
 use kadepayd::invoice::invoice_service_server::InvoiceService;
-use kadepayd::invoice::{GetInvoicesRequest, NewInvoiceRequest};
+use kadepayd::invoice::{GetInvoiceRequest, GetInvoicesRequest, NewInvoiceRequest};
 use kadepayd::services::invoice_service::KadeInvoiceService;
 use kadepayd::services::wallet_service::KadeWalletService;
 use kadepayd::wallet::NewWalletRequest;
@@ -560,4 +560,58 @@ async fn should_fetch_invoices_successfully() {
         assert_eq!(invoice.child_key_index, child_key_index);
         child_key_index += 1
     })
+}
+
+#[tokio::test]
+async fn should_fetch_invoice_by_id_successfully() {
+    let storage = Arc::new(Storage::new(true).await.expect("storage creation failed"));
+
+    storage
+        .init(&[
+            KadeInvoiceService::CREATE_TABLE,
+            KadeInvoiceService::CREATE_CHILD_INDICES_TABLE,
+            KadeWalletService::CREATE_TABLE,
+        ])
+        .await
+        .expect("storage initialization failed");
+
+    let wallet_service = KadeWalletService::new(storage.clone());
+    let invoice_service = KadeInvoiceService::new(storage.clone());
+
+    let wallet_req = NewWalletRequest {
+        x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),
+    };
+    let grpc_req = Request::new(wallet_req);
+    let new_wallet_res = wallet_service
+        .create_wallet(grpc_req)
+        .await
+        .expect("failed to create wallet")
+        .into_inner();
+
+    let invoice_req = NewInvoiceRequest {
+        x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
+        chain: "Bitcoin".to_string(),
+        network: "testnet".to_string(),
+        currency_code: "SATS".to_string(),
+        amount: "34000000".to_string(),
+        description: "Create an invoice on Bitcoin test".to_string(),
+        metadata: get_invoice_metadata(),
+    };
+
+    let grpc_req = Request::new(invoice_req);
+    let new_invoice = invoice_service
+        .create_invoice(grpc_req)
+        .await
+        .unwrap()
+        .into_inner();
+
+    let get_invoice_req = GetInvoiceRequest { id: new_invoice.id };
+    let invoice_grpc_req = Request::new(get_invoice_req);
+    let invoice = invoice_service
+        .get_invoice(invoice_grpc_req)
+        .await
+        .unwrap()
+        .into_inner();
+
+    assert_eq!(invoice.address, new_invoice.address);
 }
