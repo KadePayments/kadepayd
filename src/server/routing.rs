@@ -59,7 +59,21 @@ async fn new_invoice_page(
         "
         <!DOCTYPE html>
             <html>
-                <head><title>KadePay</title></head>
+                <head>
+                    <title>KadePay</title>
+                    <style>
+                        #address-container {{
+                            background:#F6FBF2;
+                            margin: 20px;
+                            height: fit-content;
+                            padding: 10px;
+                            border-radius: 10px;
+                        }}
+                        #address-container:active {{
+                            background: #c6d3ba;
+                        }}
+                    </style>
+                </head>
                 <body style=\"padding:0; margin:0; background:#F6FBF2; font-family:sans-serif;\">
                     <div style=\"display:flex; justify-content:center; height: 100vh; padding:0;\">
                         <div style=\"background:#EBEFE7; width:26em; height:fit-content; margin:auto; text-align:center; border-radius: 16px; border: 2px solid #717970;\">
@@ -69,12 +83,22 @@ async fn new_invoice_page(
                                 <li style=\"display:inline-block; \"><p style=\"width:fit-content; font-size:1.3rem;\">Pending</p></li>
                             </ul>
                             <div style=\"border-radius:5px;\">{}</div>
-                            <div  style=\"background:#F6FBF2; margin: 20px; height: fit-content; padding:10px; border-radius:5px;\">
+                            <div  id=\"address-container\">
                                 <p style=\"overflow-wrap:break-word; height: fit-content; border-radius:8px;\">tb1pw2nqu22jj7qyvtaeje7tyzutgcs935lakt8g30pw27wjv57mfg0srxqc7r</p>
                                 <img src=\"/static/icons/copy.svg\"  style = \"color: #F9FAEF; background: #EBEFE7; padding: 12px; width: 24px; height: 24px; border-radius: 24px;\"/>
                             </div>
                         </div>
                     </div>
+                    <script type=\"text/javascript\">
+                        const addressContainer = document.getElementById(\"address-container\");
+                        addressContainer.addEventListener(
+                            'click',
+                            () => {{
+                                const address = addressContainer.querySelector('p').textContent
+                                navigator.clipboard.writeText(address)
+                            }}
+                        )
+                    </script>
                 </body>
             </html>
     ",
