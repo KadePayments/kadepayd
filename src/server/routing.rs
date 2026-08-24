@@ -3,7 +3,7 @@ use crate::data::{NewInvoiceQuery, NewInvoiceResponse, NewPaymentRequest};
 use crate::invoice::GetInvoiceRequest;
 use crate::invoice::invoice_service_client::InvoiceServiceClient;
 use axum::extract::{Query, State};
-use axum::http::{Method, Uri};
+use axum::http::{Method, StatusCode, Uri};
 use axum::response::{Html, IntoResponse};
 
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
@@ -46,14 +46,13 @@ async fn new_payment(
     Json(info): Json<NewPaymentRequest>,
 ) -> impl IntoResponse {
     let mut invoice_client = state.invoice_client;
-    let request = tonic::Request::new(info.to_invoice_request());
-    let invoice = invoice_client
-        .create_invoice(request)
-        .await
-        .expect("payment request creation failed")
-        .into_inner();
+    let request = Request::new(info.to_invoice_request());
+    let invoice = match invoice_client.create_invoice(request).await {
+        Ok(invoice) => invoice.into_inner(),
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
 
-    Json(NewInvoiceResponse::from_response(invoice))
+    Json(NewInvoiceResponse::from_response(invoice)).into_response()
 }
 
 async fn new_invoice_page(
@@ -70,9 +69,15 @@ async fn new_invoice_page(
 
     let address = invoice.address.as_str();
     let status = invoice.status.to_uppercase();
-    let amount = format_amount(invoice.amount.as_str(), invoice.currency_code.as_str());
+    let amount = match format_amount(invoice.amount.as_str(), invoice.currency_code.as_str()) {
+        Ok(amount) => amount,
+        Err(_) => return Html("Invalid invoice amount".to_string()),
+    };
 
-    let qr_code = svg_qr_code(address);
+    let qr_code = match svg_qr_code(address) {
+        Ok(qr_code) => qr_code,
+        Err(_) => return Html("Invalid QR code".to_string()),
+    };
 
     let page = format!(
         "

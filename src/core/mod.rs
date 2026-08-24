@@ -37,8 +37,11 @@ impl KadeHDWallet {
     }
 }
 
-pub fn svg_qr_code(data: &str) -> String {
-    let code = QrCode::with_error_correction_level(data, EcLevel::H).unwrap();
+pub fn svg_qr_code(data: &str) -> Result<String, Status> {
+    let code = match QrCode::with_error_correction_level(data, EcLevel::H) {
+        Ok(code) => code,
+        Err(_) => return Err(Status::internal("Failed to generate qr code")),
+    };
     let svg_string = code.render::<svg::Color>().min_dimensions(280, 280).build();
 
     let logo_bytes = std::fs::read("assets/icons/kadepay.png").expect("Could not find file");
@@ -86,7 +89,7 @@ pub fn svg_qr_code(data: &str) -> String {
         "<rect x=\"0\" y=\"0\"",
         "<rect x=\"0\" y=\"0\" rx=\"3%\" ry=\"3%\"",
     );
-    final_svg
+    Ok(final_svg)
 }
 
 pub fn sats_to_btc(sats: u64) -> f64 {
@@ -94,9 +97,12 @@ pub fn sats_to_btc(sats: u64) -> f64 {
     btc
 }
 
-pub fn format_amount(amount: &str, currency_code: &str) -> String {
-    if currency_code == "SATS" {
-        let sats = amount.parse::<u64>().unwrap();
+pub fn format_amount(amount: &str, currency_code: &str) -> Result<String, Status> {
+    let amount = if currency_code == "SATS" {
+        let sats = match amount.parse::<u64>() {
+            Ok(sats) => sats,
+            Err(_) => return Err(Status::invalid_argument("Failed to parse invoice amount")),
+        };
         let number_of_digits = count_digits(sats);
         if number_of_digits > 5 {
             format!("₿{}", sats_to_btc(sats))
@@ -105,7 +111,8 @@ pub fn format_amount(amount: &str, currency_code: &str) -> String {
         }
     } else {
         format!("{amount} {currency_code}")
-    }
+    };
+    Ok(amount)
 }
 
 fn count_digits(n: u64) -> u32 {
