@@ -33,12 +33,16 @@ pub async fn routes(url: String) -> Router {
         .allow_origin(Any);
 
     Router::new()
-        .route("/", get(""))
+        .route("/", get(heartbeat))
         .route("/pay/invoice", post(new_payment))
         .route("/pay/invoice", get(new_invoice_page))
         .nest_service("/static", ServeDir::new("assets"))
         .with_state(app_state)
         .layer(cors)
+}
+
+async fn heartbeat() -> impl IntoResponse {
+    (StatusCode::OK, "KadePay is breathing!")
 }
 
 async fn new_payment(
