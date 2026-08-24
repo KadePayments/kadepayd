@@ -6,6 +6,7 @@ use axum::extract::{Query, State};
 use axum::http::{Method, StatusCode, Uri};
 use axum::response::{Html, IntoResponse};
 
+use crate::server::to_http_status;
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -53,7 +54,7 @@ async fn new_payment(
     let request = Request::new(info.to_invoice_request());
     let invoice = match invoice_client.create_invoice(request).await {
         Ok(invoice) => invoice.into_inner(),
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Err(status) => return to_http_status(status).into_response(),
     };
 
     Json(NewInvoiceResponse::from_response(invoice)).into_response()
@@ -62,25 +63,25 @@ async fn new_payment(
 async fn new_invoice_page(
     State(state): State<AppState>,
     Query(params): Query<NewInvoiceQuery>,
-) -> Html<String> {
+) -> impl IntoResponse {
     let invoice_req = GetInvoiceRequest { id: params.id };
     let invoice_grpc_req = Request::new(invoice_req);
     let mut invoice_client = state.invoice_client;
     let invoice = match invoice_client.get_invoice(invoice_grpc_req).await {
         Ok(invoice) => invoice.into_inner(),
-        Err(_) => return Html("Could not get invoice".to_string()),
+        Err(status) => return to_http_status(status).into_response(),
     };
 
     let address = invoice.address.as_str();
-    let status = invoice.status.to_uppercase();
+    let invoice_status = invoice.status.to_uppercase();
     let amount = match format_amount(invoice.amount.as_str(), invoice.currency_code.as_str()) {
         Ok(amount) => amount,
-        Err(_) => return Html("Invalid invoice amount".to_string()),
+        Err(status) => return to_http_status(status).into_response(),
     };
 
     let qr_code = match svg_qr_code(address) {
         Ok(qr_code) => qr_code,
-        Err(_) => return Html("Invalid QR code".to_string()),
+        Err(status) => return to_http_status(status).into_response(),
     };
 
     let page = format!(
@@ -108,7 +109,7 @@ async fn new_invoice_page(
                             <h1>KadePay</h1>
                             <ul style=\"display:flex; flex-direction: row; align-items: center; width:fit-content; gap:120px; padding:0; margin:auto; margin-bottom:20px;\">
                                 <li style=\"display:inline-block; \"><p style=\"width:fit-content; font-size:1.3rem;\">{amount}</p></li>
-                                <li style=\"display:inline-block; \"><p style=\"width:fit-content; font-size:1.3rem;\">{status}</p></li>
+                                <li style=\"display:inline-block; \"><p style=\"width:fit-content; font-size:1.3rem;\">{invoice_status}</p></li>
                             </ul>
                             <div style=\"border-radius:5px;\">{qr_code}</div>
                             <div  id=\"address-container\">
@@ -131,5 +132,5 @@ async fn new_invoice_page(
             </html>
     "
     );
-    Html(page)
+    Html(page).into_response()
 }
