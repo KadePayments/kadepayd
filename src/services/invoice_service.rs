@@ -93,7 +93,7 @@ impl KadeInvoiceService {
     async fn process_new_invoice_request(
         &self,
         request: Request<NewInvoiceRequest>,
-    ) -> (Result<Response<InvoiceResponse>, (Status, Option<(Uuid, u32)>)>) {
+    ) -> Result<Response<InvoiceResponse>, (Status, Option<(Uuid, u32)>)> {
         let invoice = request.into_inner();
 
         let x_pub_key_id = match Uuid::from_str(invoice.x_pub_key_id.as_str()) {

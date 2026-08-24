@@ -1,6 +1,6 @@
 fn main() {
     let result = tonic_prost_build::configure()
-        .build_client(false)
+        .build_client(true)
         .build_server(true)
         .build_transport(true)
         .compile_protos(

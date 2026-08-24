@@ -2,12 +2,14 @@ use crate::data::errors::StorageError;
 use crate::data::storage::Storage;
 use crate::invoice::invoice_service_server::InvoiceServiceServer;
 use crate::server::config::Config;
+use crate::server::routing::routes;
 use crate::services::invoice_service::KadeInvoiceService;
 use crate::services::wallet_service::KadeWalletService;
 use crate::wallet::wallet_service_server::WalletServiceServer;
+use axum::serve;
 use std::sync::Arc;
 use tonic::codec::CompressionEncoding::Gzip;
-use tonic::transport::Server;
+use tonic::service::Routes;
 
 pub struct Engine;
 impl Engine {
@@ -24,11 +26,17 @@ impl Engine {
             .accept_compressed(Gzip)
             .send_compressed(Gzip);
 
-        Server::builder()
-            .add_service(invoice_server)
+        let grpc_router = Routes::new(invoice_server)
             .add_service(wallet_server)
-            .serve(server_config.kadepay_server_addr)
-            .await?;
+            .prepare()
+            .into_axum_router();
+
+        let url = server_config.api_url.clone();
+        let router = routes(url).await.merge(grpc_router);
+
+        let listener = tokio::net::TcpListener::bind(server_config.kadepay_server_addr).await?;
+        serve(listener, router).await?;
+
         Ok(())
     }
 

@@ -5,7 +5,7 @@ use crate::wallet::{NewWalletRequest, NewWalletResponse, WalletIdRequest, Wallet
 use bitcoin::bip32::Xpub;
 use std::str::FromStr;
 use std::sync::Arc;
-use tokio_postgres::{Row, Transaction};
+use tokio_postgres::Transaction;
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
 

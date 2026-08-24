@@ -1,0 +1,1 @@
+GET http://localhost:50051/pay/invoice?id=01292227-67e2-43d4-9165-98956ac23095

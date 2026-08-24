@@ -5,6 +5,7 @@ use std::{env, fs};
 
 pub struct Config {
     pub(crate) kadepay_server_addr: SocketAddr,
+    pub(crate) api_url: String,
     pub(crate) kadepay_db_host: String,
     pub(crate) kadepay_db_url: String,
     pub(crate) kadepay_db_user: String,
@@ -32,6 +33,7 @@ impl Config {
             .or_else(|| local_secrets.get(Self::KADEPAY_PORT_KEY).cloned())
             .expect("Missing KADEPAY_PORT in environment variables or secrets");
         let server_url = format!("{}:{}", host, port);
+        let api_url = format!("http://{}", server_url);
         let kadepay_server_addr = match server_url.parse::<SocketAddr>() {
             Ok(addr) => addr,
             Err(_) => panic!("Invalid invoices server url: {}", server_url),
@@ -70,6 +72,7 @@ impl Config {
 
         Config {
             kadepay_server_addr,
+            api_url,
             kadepay_db_host: db_host,
             kadepay_db_url: db_url,
             kadepay_db_user: db_user,
