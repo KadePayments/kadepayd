@@ -6,6 +6,7 @@ use ::bitcoin::key::Secp256k1;
 use ::bitcoin::secp256k1::All;
 use qrcode::render::svg;
 use qrcode::{EcLevel, QrCode};
+use rust_decimal::Decimal;
 use std::str::FromStr;
 use tonic::Status;
 
@@ -92,20 +93,23 @@ pub fn svg_qr_code(data: &str) -> Result<String, Status> {
     Ok(final_svg)
 }
 
-pub fn sats_to_btc(sats: u64) -> f64 {
-    let btc = sats as f64 / 100_000_000f64;
-    btc
+pub fn sats_to_btc(sats: Decimal) -> Option<Decimal> {
+    sats.checked_div(100_000_000.into())
 }
 
 pub fn format_amount(amount: &str, currency_code: &str) -> Result<String, Status> {
     let amount = if currency_code == "SATS" {
-        let sats = match amount.parse::<u64>() {
+        let sats = match Decimal::from_str(amount) {
             Ok(sats) => sats,
             Err(_) => return Err(Status::invalid_argument("Failed to parse invoice amount")),
         };
         let number_of_digits = count_digits(sats);
         if number_of_digits > 5 {
-            format!("₿{}", sats_to_btc(sats))
+            let btc = match sats_to_btc(sats) {
+                Some(btc) => btc.normalize(),
+                None => return Err(Status::invalid_argument("Failed to convert sats into btc")),
+            };
+            format!("₿{btc}")
         } else {
             format!("{} SATS", sats.to_string())
         }
@@ -115,6 +119,22 @@ pub fn format_amount(amount: &str, currency_code: &str) -> Result<String, Status
     Ok(amount)
 }
 
-fn count_digits(n: u64) -> u32 {
-    n.checked_ilog10().unwrap_or(0) + 1
+fn count_digits(mut number: Decimal) -> usize {
+    number = number.normalize();
+
+    let mantissa = number.mantissa();
+
+    if mantissa == 0 {
+        return 1;
+    }
+
+    let mut abs_mantissa = mantissa.abs();
+    let mut count = 0;
+
+    while abs_mantissa > 0 {
+        abs_mantissa /= 10;
+        count += 1;
+    }
+
+    count
 }
