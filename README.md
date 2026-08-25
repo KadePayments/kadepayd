@@ -59,7 +59,7 @@ There two ways to set up the deployment environment
     | `KADEPAY_DB_NAME`     | The PostgreSQL database name                                                                                                  |
     | `KADEPAY_DB_PASSWORD` | The PostgreSQL database password                                                                                              |
     | `ARKADE_URL`          | The URL exposing the Arkade service to KadePay                                                                                |
-    | `KADEPAY_ASSET_DIR`   | The directory holding all assets used by `kadepayd`                                                                             |
+    | `KADEPAY_ASSET_DIR`   | The directory holding all assets used by `kadepayd`                                                                           |
 
 2. Create a `.secrets` file (For testing and development)
 
