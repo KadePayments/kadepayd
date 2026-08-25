@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use std::path::Path;
 use std::{env, fs};
 
+#[derive(Clone)]
 pub struct Config {
     pub(crate) kadepay_server_addr: SocketAddr,
     pub(crate) api_url: String,
@@ -12,6 +13,7 @@ pub struct Config {
     pub(crate) kadepay_db_password: String,
     pub(crate) kadepay_db_name: String,
     pub(crate) arkade_server_url: String,
+    pub(crate) asset_dir: String,
 }
 
 impl Config {
@@ -23,6 +25,7 @@ impl Config {
     const KADEPAY_DB_PASSWORD_KEY: &'static str = "KADEPAY_DB_PASSWORD";
     const KADEPAY_DB_NAME_KEY: &'static str = "KADEPAY_DB_NAME";
     const ARKADE_URL_KEY: &'static str = "ARKADE_URL";
+    const KADEPAY_ASSET_DIR_KEY: &'static str = "KADEPAY_ASSET_DIR";
 
     pub fn new() -> Config {
         let local_secrets = read_local_secrets();
@@ -69,6 +72,14 @@ impl Config {
             .ok()
             .or_else(|| local_secrets.get(Self::ARKADE_URL_KEY).cloned())
             .expect("Missing ARKADE_URL in environment variables or secrets");
+        let asset_dir = env::var(Self::KADEPAY_ASSET_DIR_KEY)
+            .ok()
+            .or_else(|| local_secrets.get(Self::KADEPAY_ASSET_DIR_KEY).cloned())
+            .expect("Missing KADEPAY_ASSET_DIR in environment variables or secrets");
+
+        if asset_dir.is_empty() {
+            panic!("KADEPAY_ASSET_DIR must be set");
+        }
 
         Config {
             kadepay_server_addr,
@@ -79,6 +90,7 @@ impl Config {
             kadepay_db_password: db_password,
             kadepay_db_name: db_name,
             arkade_server_url: arkade_url,
+            asset_dir,
         }
     }
 }

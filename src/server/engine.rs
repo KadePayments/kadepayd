@@ -31,8 +31,7 @@ impl Engine {
             .prepare()
             .into_axum_router();
 
-        let url = server_config.api_url.clone();
-        let router = routes(url).await.merge(grpc_router);
+        let router = routes(server_config.clone()).await.merge(grpc_router);
 
         let listener = tokio::net::TcpListener::bind(server_config.kadepay_server_addr).await?;
         serve(listener, router).await?;

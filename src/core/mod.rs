@@ -1,3 +1,4 @@
+use crate::server::config::Config;
 use ::bitcoin::XOnlyPublicKey;
 use ::bitcoin::base64::Engine;
 use ::bitcoin::base64::engine::general_purpose;
@@ -38,14 +39,17 @@ impl KadeHDWallet {
     }
 }
 
-pub fn svg_qr_code(data: &str) -> Result<String, Status> {
+pub fn svg_qr_code(data: &str, asset_dir: String) -> Result<String, Status> {
     let code = match QrCode::with_error_correction_level(data, EcLevel::H) {
         Ok(code) => code,
         Err(_) => return Err(Status::internal("Failed to generate qr code")),
     };
     let svg_string = code.render::<svg::Color>().min_dimensions(280, 280).build();
 
-    let logo_bytes = std::fs::read("assets/icons/kadepay.png").expect("Could not find file");
+    let logo_bytes = match std::fs::read(format!("{asset_dir}/icons/kadepay.png")) {
+        Ok(bytes) => bytes,
+        Err(_) => return Err(Status::internal("Failed to read QR code logo")),
+    };
     let logo_base64 = general_purpose::STANDARD.encode(&logo_bytes);
 
     let inline_logo_url = format!("data:image/png;base64,{}", logo_base64);
