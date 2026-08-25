@@ -11,6 +11,7 @@ use crate::server::to_http_status;
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use html_escape::encode_text_to_string;
 use std::str::FromStr;
 use tonic::Request;
 use tonic::codegen::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
@@ -78,14 +79,22 @@ async fn new_invoice_page(
         Err(status) => return to_http_status(status).into_response(),
     };
 
-    let address = invoice.address.as_str();
-    let invoice_status = invoice.status.to_uppercase();
-    let amount = match format_amount(invoice.amount.as_str(), invoice.currency_code.as_str()) {
-        Ok(amount) => amount,
-        Err(status) => return to_http_status(status).into_response(),
-    };
+    let mut address = "".to_string();
+    encode_text_to_string(invoice.address.as_str(), &mut address);
 
-    let qr_code = match svg_qr_code(address, state.config.asset_dir) {
+    let mut invoice_status = "".to_string();
+    encode_text_to_string(invoice.status.to_uppercase(), &mut invoice_status);
+
+    let mut amount = "".to_string();
+    encode_text_to_string(
+        match format_amount(invoice.amount.as_str(), invoice.currency_code.as_str()) {
+            Ok(amount) => amount,
+            Err(status) => return to_http_status(status).into_response(),
+        },
+        &mut amount,
+    );
+
+    let qr_code = match svg_qr_code(address.as_str(), state.config.asset_dir) {
         Ok(qr_code) => qr_code,
         Err(status) => return to_http_status(status).into_response(),
     };
