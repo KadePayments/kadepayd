@@ -28,6 +28,7 @@ pub async fn routes(config: Config) -> Router {
     let grpc_channel = tonic::transport::Channel::builder(uri).connect_lazy();
 
     let invoice_client = InvoiceServiceClient::new(grpc_channel);
+    let asset_dir = config.asset_dir.clone();
     let app_state = AppState {
         config,
         invoice_client,
@@ -42,7 +43,7 @@ pub async fn routes(config: Config) -> Router {
         .route("/", get(heartbeat))
         .route("/pay/invoice", post(new_payment))
         .route("/pay/invoice", get(new_invoice_page))
-        .nest_service("/static", ServeDir::new("assets"))
+        .nest_service("/static", ServeDir::new(&asset_dir))
         .with_state(app_state)
         .layer(cors)
 }
