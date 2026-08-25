@@ -24,7 +24,7 @@ impl Config {
     const KADEPAY_DB_PASSWORD_KEY: &'static str = "KADEPAY_DB_PASSWORD";
     const KADEPAY_DB_NAME_KEY: &'static str = "KADEPAY_DB_NAME";
     const ARKADE_URL_KEY: &'static str = "ARKADE_URL";
-    const ASSET_DIR_KEY: &'static str = "ASSET_DIR";
+    const KADEPAY_ASSET_DIR_KEY: &'static str = "KADEPAY_ASSET_DIR";
 
     pub fn new() -> Config {
         let local_secrets = read_local_secrets();
@@ -71,13 +71,13 @@ impl Config {
             .ok()
             .or_else(|| local_secrets.get(Self::ARKADE_URL_KEY).cloned())
             .expect("Missing ARKADE_URL in environment variables or secrets");
-        let asset_dir = env::var(Self::ASSET_DIR_KEY)
+        let asset_dir = env::var(Self::KADEPAY_ASSET_DIR_KEY)
             .ok()
-            .or_else(|| local_secrets.get(Self::ASSET_DIR_KEY).cloned())
-            .expect("Missing ASSET_DIR in environment variables or secrets");
+            .or_else(|| local_secrets.get(Self::KADEPAY_ASSET_DIR_KEY).cloned())
+            .expect("Missing KADEPAY_ASSET_DIR in environment variables or secrets");
 
         if asset_dir.is_empty() {
-            panic!("ASSET_DIR must be set");
+            panic!("KADEPAY_ASSET_DIR must be set");
         }
 
         Config {
