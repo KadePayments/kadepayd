@@ -74,7 +74,11 @@ impl Config {
         let asset_dir = env::var(Self::ASSET_DIR_KEY)
             .ok()
             .or_else(|| local_secrets.get(Self::ASSET_DIR_KEY).cloned())
-            .expect("Missing ASSET DIR in environment variables or secrets");
+            .expect("Missing ASSET_DIR in environment variables or secrets");
+
+        if asset_dir.is_empty() {
+            panic!("ASSET_DIR must be set");
+        }
 
         Config {
             kadepay_server_addr,
