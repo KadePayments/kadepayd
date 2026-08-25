@@ -39,15 +39,14 @@ impl KadeHDWallet {
     }
 }
 
-pub fn svg_qr_code(data: &str) -> Result<String, Status> {
+pub fn svg_qr_code(data: &str, asset_dir: String) -> Result<String, Status> {
     let code = match QrCode::with_error_correction_level(data, EcLevel::H) {
         Ok(code) => code,
         Err(_) => return Err(Status::internal("Failed to generate qr code")),
     };
     let svg_string = code.render::<svg::Color>().min_dimensions(280, 280).build();
 
-    let config = Config::new();
-    let logo_bytes = match std::fs::read(format!("{}/icons/kadepay.png", config.asset_dir)) {
+    let logo_bytes = match std::fs::read(format!("{asset_dir}/icons/kadepay.png")) {
         Ok(bytes) => bytes,
         Err(_) => return Err(Status::internal("Failed to read QR code logo")),
     };

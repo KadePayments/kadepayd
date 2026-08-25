@@ -6,6 +6,7 @@ use axum::extract::{Query, State};
 use axum::http::{Method, StatusCode, Uri};
 use axum::response::{Html, IntoResponse};
 
+use crate::server::config::Config;
 use crate::server::to_http_status;
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
 use axum::routing::{get, post};
@@ -18,15 +19,19 @@ use tower_http::services::ServeDir;
 
 #[derive(Clone)]
 struct AppState {
+    pub config: Config,
     pub invoice_client: InvoiceServiceClient<tonic::transport::Channel>,
 }
 
-pub async fn routes(url: String) -> Router {
-    let uri: Uri = Uri::from_str(&url).unwrap();
+pub async fn routes(config: Config) -> Router {
+    let uri: Uri = Uri::from_str(&config.api_url).unwrap();
     let grpc_channel = tonic::transport::Channel::builder(uri).connect_lazy();
 
     let invoice_client = InvoiceServiceClient::new(grpc_channel);
-    let app_state = AppState { invoice_client };
+    let app_state = AppState {
+        config,
+        invoice_client,
+    };
 
     let cors = CorsLayer::new()
         .allow_methods([Method::POST, Method::GET])
@@ -79,7 +84,7 @@ async fn new_invoice_page(
         Err(status) => return to_http_status(status).into_response(),
     };
 
-    let qr_code = match svg_qr_code(address) {
+    let qr_code = match svg_qr_code(address, state.config.asset_dir) {
         Ok(qr_code) => qr_code,
         Err(status) => return to_http_status(status).into_response(),
     };
