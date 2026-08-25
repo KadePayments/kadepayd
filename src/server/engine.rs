@@ -15,10 +15,10 @@ pub struct Engine;
 impl Engine {
     pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
         let server_config = Config::new();
-        let storage = Arc::new(Storage::new(false).await?);
+        let storage = Arc::new(Storage::new(&server_config, false).await?);
         Self::init_storage(&storage).await?;
         let wallet_service = KadeWalletService::new(storage.clone());
-        let invoice_service = KadeInvoiceService::new(storage.clone());
+        let invoice_service = KadeInvoiceService::new(&server_config, storage.clone());
         let wallet_server = WalletServiceServer::new(wallet_service)
             .accept_compressed(Gzip)
             .send_compressed(Gzip);
@@ -31,7 +31,7 @@ impl Engine {
             .prepare()
             .into_axum_router();
 
-        let router = routes(server_config.clone()).await.merge(grpc_router);
+        let router = routes(&server_config).await.merge(grpc_router);
 
         let listener = tokio::net::TcpListener::bind(server_config.kadepay_server_addr).await?;
         serve(listener, router).await?;

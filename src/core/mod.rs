@@ -1,4 +1,3 @@
-use crate::server::config::Config;
 use ::bitcoin::XOnlyPublicKey;
 use ::bitcoin::base64::Engine;
 use ::bitcoin::base64::engine::general_purpose;
