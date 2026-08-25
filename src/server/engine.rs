@@ -17,8 +17,8 @@ impl Engine {
         let server_config = Config::new();
         let storage = Arc::new(Storage::new(&server_config, false).await?);
         Self::init_storage(&storage).await?;
-        let wallet_service = KadeWalletService::new(storage.clone());
-        let invoice_service = KadeInvoiceService::new(&server_config, storage.clone());
+        let wallet_service = KadeWalletService::new(&storage);
+        let invoice_service = KadeInvoiceService::new(&server_config, &storage);
         let wallet_server = WalletServiceServer::new(wallet_service)
             .accept_compressed(Gzip)
             .send_compressed(Gzip);

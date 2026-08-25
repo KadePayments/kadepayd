@@ -38,7 +38,7 @@ async fn should_create_an_onchain_invoice_successfully() {
         .await
         .expect("storage initialization failed");
 
-    let wallet = KadeWalletService::new(storage.clone());
+    let wallet = KadeWalletService::new(&storage);
     let  wallet_req = NewWalletRequest { x_pub_key: "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55ntaF".to_string() };
     let grpc_req = Request::new(wallet_req);
     let new_wallet_res = wallet
@@ -47,7 +47,7 @@ async fn should_create_an_onchain_invoice_successfully() {
         .expect("failed to create wallet")
         .into_inner();
 
-    let invoice_service = KadeInvoiceService::new(&config, storage);
+    let invoice_service = KadeInvoiceService::new(&config, &storage);
 
     let invoice_req = NewInvoiceRequest {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
@@ -107,7 +107,7 @@ async fn should_create_an_offchain_invoice_successfully() {
         .await
         .expect("storage initialization failed");
 
-    let wallet = KadeWalletService::new(storage.clone());
+    let wallet = KadeWalletService::new(&storage);
     let  wallet_req = NewWalletRequest { x_pub_key: "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55ntaF".to_string() };
     let grpc_req = Request::new(wallet_req);
     let new_wallet_res = wallet
@@ -116,7 +116,7 @@ async fn should_create_an_offchain_invoice_successfully() {
         .expect("failed to create wallet")
         .into_inner();
 
-    let invoice_service = KadeInvoiceService::new_test(config, storage);
+    let invoice_service = KadeInvoiceService::new_test(config, &storage);
 
     let invoice_req = NewInvoiceRequest {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
@@ -178,7 +178,7 @@ async fn should_fail_creating_an_invoice_with_unmatching_network_to_ark_network(
         .await
         .expect("storage initialization failed");
 
-    let wallet = KadeWalletService::new(storage.clone());
+    let wallet = KadeWalletService::new(&storage);
     let  wallet_req = NewWalletRequest { x_pub_key: "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55ntaF".to_string() };
     let grpc_req = Request::new(wallet_req);
     let new_wallet_res = wallet
@@ -187,7 +187,7 @@ async fn should_fail_creating_an_invoice_with_unmatching_network_to_ark_network(
         .expect("failed to create wallet")
         .into_inner();
 
-    let invoice_service = KadeInvoiceService::new_test(config, storage);
+    let invoice_service = KadeInvoiceService::new_test(config, &storage);
 
     let invoice_req = NewInvoiceRequest {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
@@ -230,7 +230,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
         .await
         .expect("storage initialization failed");
 
-    let wallet = KadeWalletService::new(storage.clone());
+    let wallet = KadeWalletService::new(&storage);
     let  wallet_req = NewWalletRequest { x_pub_key: "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55ntaF".to_string() };
     let grpc_req = Request::new(wallet_req);
     let new_wallet_res = wallet
@@ -239,7 +239,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
         .expect("failed to create wallet")
         .into_inner();
 
-    let invoice_service = KadeInvoiceService::new(&config, storage);
+    let invoice_service = KadeInvoiceService::new(&config, &storage);
 
     let mut prev_address = "".to_string();
     let mut seen_addresses: HashSet<String> = HashSet::new();
@@ -324,8 +324,8 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
         .await
         .expect("storage initialization failed");
 
-    let wallet_service = KadeWalletService::new(storage.clone());
-    let invoice_service = KadeInvoiceService::new(&config, storage);
+    let wallet_service = KadeWalletService::new(&storage);
+    let invoice_service = KadeInvoiceService::new(&config, &storage);
 
     let mut prev_address = "".to_string();
     let mut seen_addresses: HashSet<String> = HashSet::new();
@@ -411,9 +411,9 @@ async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_success
         .await
         .expect("storage initialization failed");
 
-    let wallet_service = KadeWalletService::new(storage.clone());
+    let wallet_service = KadeWalletService::new(&storage);
 
-    let invoice_service = KadeInvoiceService::new(&config, storage);
+    let invoice_service = KadeInvoiceService::new(&config, &storage);
 
     let wallet_req = NewWalletRequest {
         x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),
@@ -482,8 +482,8 @@ async fn should_clean_up_unused_child_key_indices_after_failure() {
         .await
         .expect("storage initialization failed");
 
-    let wallet_service = KadeWalletService::new(storage.clone());
-    let invoice_service = KadeInvoiceService::new(&config, storage.clone());
+    let wallet_service = KadeWalletService::new(&storage);
+    let invoice_service = KadeInvoiceService::new(&config, &storage);
 
     let wallet_req = NewWalletRequest {
         x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),
@@ -552,8 +552,8 @@ async fn should_fetch_invoices_successfully() {
         .await
         .expect("storage initialization failed");
 
-    let invoice_service = KadeInvoiceService::new(&config, storage.clone());
-    let wallet_service = KadeWalletService::new(storage.clone());
+    let invoice_service = KadeInvoiceService::new(&config, &storage);
+    let wallet_service = KadeWalletService::new(&storage);
 
     let wallet_req = NewWalletRequest {
         x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),
@@ -621,8 +621,8 @@ async fn should_fetch_invoice_by_id_successfully() {
         .await
         .expect("storage initialization failed");
 
-    let wallet_service = KadeWalletService::new(storage.clone());
-    let invoice_service = KadeInvoiceService::new(&config, storage.clone());
+    let wallet_service = KadeWalletService::new(&storage);
+    let invoice_service = KadeInvoiceService::new(&config, &storage);
 
     let wallet_req = NewWalletRequest {
         x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),

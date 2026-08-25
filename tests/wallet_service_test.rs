@@ -22,7 +22,7 @@ async fn should_create_watch_only_wallet_successfully() {
         .await
         .expect("storage initialization failed");
 
-    let wallet_service = KadeWalletService::new(storage);
+    let wallet_service = KadeWalletService::new(&storage);
 
     let new_wallet_request = NewWalletRequest { x_pub_key };
 
@@ -53,7 +53,7 @@ async fn should_fail_to_create_watch_only_wallet_on_invalid_pub_key() {
         .await
         .expect("storage initialization failed");
 
-    let wallet_service = KadeWalletService::new(storage);
+    let wallet_service = KadeWalletService::new(&storage);
 
     let new_wallet_request = NewWalletRequest { x_pub_key };
 

@@ -77,18 +77,18 @@ impl KadeInvoiceService {
     pub const SELECT_CHILD_INDICES_BY_WALLET: &'static str =
         "SELECT * FROM child_key_indices WHERE x_pub_key_id = $1;";
 
-    pub fn new(config: &Config, storage: Arc<Storage>) -> Self {
+    pub fn new(config: &Config, storage: &Arc<Storage>) -> Self {
         Self {
             config: config.clone(),
-            storage,
+            storage: storage.clone(),
             test: false,
         }
     }
 
-    pub fn new_test(config: Config, storage: Arc<Storage>) -> Self {
+    pub fn new_test(config: Config, storage: &Arc<Storage>) -> Self {
         Self {
             config,
-            storage,
+            storage: storage.clone(),
             test: true,
         }
     }
