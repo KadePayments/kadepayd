@@ -24,17 +24,19 @@ impl Storage {
                 let (conn_s, db_p) = Self::create_embedded_db().await?;
                 (conn_s, Some(db_p))
             } else {
-                let config = config.expect("Server configuration should be set");
-                (
-                    format!(
-                        "host={} user={} password={} dbname={}",
-                        config.kadepay_db_host,
-                        config.kadepay_db_user,
-                        config.kadepay_db_password,
-                        config.kadepay_db_name
+                match config {
+                    Some(config) => (
+                        format!(
+                            "host={} user={} password={} dbname={}",
+                            config.kadepay_db_host,
+                            config.kadepay_db_user,
+                            config.kadepay_db_password,
+                            config.kadepay_db_name
+                        ),
+                        None,
                     ),
-                    None,
-                )
+                    None => return Err(StorageError::ConfigurationError),
+                }
             };
         let tls_connector = TlsConnector::builder().build()?;
         let tls = MakeTlsConnector::new(tls_connector);

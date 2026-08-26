@@ -76,9 +76,9 @@ impl KadeInvoiceService {
     pub const SELECT_CHILD_INDICES_BY_WALLET: &'static str =
         "SELECT * FROM child_key_indices WHERE x_pub_key_id = $1;";
 
-    pub fn new(config: Option<&Config>, storage: &Arc<Storage>) -> Self {
+    pub fn new(config: &Config, storage: &Arc<Storage>) -> Self {
         Self {
-            config: config.cloned(),
+            config: Some(config.clone()),
             storage: storage.clone(),
             test: false,
         }
@@ -198,10 +198,16 @@ impl KadeInvoiceService {
                 if self.test {
                     ArkadeClient::get_test_info()
                 } else {
-                    let config = self
-                        .config
-                        .as_ref()
-                        .expect("Server configuration must be set");
+                    let config = match self.config.as_ref() {
+                        Some(config) => config,
+                        None => {
+                            return Err((
+                                Status::internal("Missing server configuration"),
+                                Some((x_pub_key_id, new_child_key_index)),
+                            ));
+                        }
+                    };
+
                     let arkade_client =
                         match ArkadeClient::new_connection(config.arkade_server_url.as_str()).await
                         {
