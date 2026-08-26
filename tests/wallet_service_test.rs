@@ -1,5 +1,4 @@
 use kadepayd::data::storage::Storage;
-use kadepayd::server::config::Config;
 use kadepayd::services::wallet_service::KadeWalletService;
 use kadepayd::wallet::NewWalletRequest;
 use kadepayd::wallet::wallet_service_server::WalletService;
@@ -10,9 +9,8 @@ use tonic::{Code, Request};
 async fn should_create_watch_only_wallet_successfully() {
     let x_pub_key = "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55ntaF".to_string();
 
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );
@@ -41,9 +39,8 @@ async fn should_create_watch_only_wallet_successfully() {
 async fn should_fail_to_create_watch_only_wallet_on_invalid_pub_key() {
     let x_pub_key = "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55nt".to_string();
 
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );

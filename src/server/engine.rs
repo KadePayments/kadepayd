@@ -15,10 +15,10 @@ pub struct Engine;
 impl Engine {
     pub async fn start() -> Result<(), Box<dyn std::error::Error>> {
         let server_config = Config::new();
-        let storage = Arc::new(Storage::new(&server_config, false).await?);
+        let storage = Arc::new(Storage::new(Some(&server_config), false).await?);
         Self::init_storage(&storage).await?;
         let wallet_service = KadeWalletService::new(&storage);
-        let invoice_service = KadeInvoiceService::new(&server_config, &storage);
+        let invoice_service = KadeInvoiceService::new(Some(&server_config), &storage);
         let wallet_server = WalletServiceServer::new(wallet_service)
             .accept_compressed(Gzip)
             .send_compressed(Gzip);

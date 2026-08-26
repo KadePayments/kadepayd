@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use std::path::Path;
 use std::{env, fs};
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Config {
     pub(crate) kadepay_server_addr: SocketAddr,
     pub(crate) api_url: String,

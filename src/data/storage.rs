@@ -18,11 +18,12 @@ impl Storage {
     const MAX_CONNECTIONS: u32 = 13;
     const MIN_IDLE_CONNECTIONS: u32 = 3;
 
-    pub async fn new(config: &Config, embedded: bool) -> Result<Storage, StorageError> {
+    pub async fn new(config: Option<&Config>, embedded: bool) -> Result<Storage, StorageError> {
         let (connection_string, db_process): (String, Option<PostgreSQL>) = if embedded {
             let (conn_s, db_p) = Self::create_embedded_db().await?;
             (conn_s, Some(db_p))
         } else {
+            let config = config.expect("Server configuration should be set");
             (
                 format!(
                     "host={} user={} password={} dbname={}",

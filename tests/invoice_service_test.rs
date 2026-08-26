@@ -3,7 +3,6 @@ use bitcoin::{Address, Network};
 use kadepayd::data::storage::Storage;
 use kadepayd::invoice::invoice_service_server::InvoiceService;
 use kadepayd::invoice::{GetInvoiceRequest, GetInvoicesRequest, NewInvoiceRequest};
-use kadepayd::server::config::Config;
 use kadepayd::services::invoice_service::KadeInvoiceService;
 use kadepayd::services::wallet_service::KadeWalletService;
 use kadepayd::wallet::NewWalletRequest;
@@ -22,9 +21,8 @@ fn get_invoice_metadata() -> HashMap<String, String> {
 
 #[tokio::test]
 async fn should_create_an_onchain_invoice_successfully() {
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );
@@ -47,7 +45,7 @@ async fn should_create_an_onchain_invoice_successfully() {
         .expect("failed to create wallet")
         .into_inner();
 
-    let invoice_service = KadeInvoiceService::new(&config, &storage);
+    let invoice_service = KadeInvoiceService::new(None, &storage);
 
     let invoice_req = NewInvoiceRequest {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
@@ -91,9 +89,8 @@ async fn should_create_an_onchain_invoice_successfully() {
 
 #[tokio::test]
 async fn should_create_an_offchain_invoice_successfully() {
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );
@@ -116,7 +113,7 @@ async fn should_create_an_offchain_invoice_successfully() {
         .expect("failed to create wallet")
         .into_inner();
 
-    let invoice_service = KadeInvoiceService::new_test(config, &storage);
+    let invoice_service = KadeInvoiceService::new_test(&storage);
 
     let invoice_req = NewInvoiceRequest {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
@@ -162,9 +159,8 @@ async fn should_create_an_offchain_invoice_successfully() {
 
 #[tokio::test]
 async fn should_fail_creating_an_invoice_with_unmatching_network_to_ark_network() {
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );
@@ -187,7 +183,7 @@ async fn should_fail_creating_an_invoice_with_unmatching_network_to_ark_network(
         .expect("failed to create wallet")
         .into_inner();
 
-    let invoice_service = KadeInvoiceService::new_test(config, &storage);
+    let invoice_service = KadeInvoiceService::new_test(&storage);
 
     let invoice_req = NewInvoiceRequest {
         x_pub_key_id: new_wallet_res.x_pub_key_id.to_string(),
@@ -214,9 +210,8 @@ async fn should_fail_creating_an_invoice_with_unmatching_network_to_ark_network(
 
 #[tokio::test]
 async fn should_create_new_onchain_payment_address_for_every_new_invoice_successfully() {
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );
@@ -239,7 +234,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_success
         .expect("failed to create wallet")
         .into_inner();
 
-    let invoice_service = KadeInvoiceService::new(&config, &storage);
+    let invoice_service = KadeInvoiceService::new(None, &storage);
 
     let mut prev_address = "".to_string();
     let mut seen_addresses: HashSet<String> = HashSet::new();
@@ -308,9 +303,8 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
         "tpubDCLuBUeExyGUCps4k7Hp27azTm4vzGhQaJpXFbxjeCU5hXaoyexu3KRbheXEzLUpEPheFi1D1CCJF874UguGciwccFkBLN1vF4KN8jpXYxu".to_string()
     ];
 
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );
@@ -325,7 +319,7 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
         .expect("storage initialization failed");
 
     let wallet_service = KadeWalletService::new(&storage);
-    let invoice_service = KadeInvoiceService::new(&config, &storage);
+    let invoice_service = KadeInvoiceService::new(None, &storage);
 
     let mut prev_address = "".to_string();
     let mut seen_addresses: HashSet<String> = HashSet::new();
@@ -395,9 +389,8 @@ async fn should_create_new_onchain_payment_address_for_every_new_invoice_from_di
 
 #[tokio::test]
 async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_successfully() {
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );
@@ -413,7 +406,7 @@ async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_success
 
     let wallet_service = KadeWalletService::new(&storage);
 
-    let invoice_service = KadeInvoiceService::new(&config, &storage);
+    let invoice_service = KadeInvoiceService::new(None, &storage);
 
     let wallet_req = NewWalletRequest {
         x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),
@@ -466,9 +459,8 @@ async fn should_atomically_create_concurrent_invoices_in_the_same_wallet_success
 }
 #[tokio::test]
 async fn should_clean_up_unused_child_key_indices_after_failure() {
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );
@@ -483,7 +475,7 @@ async fn should_clean_up_unused_child_key_indices_after_failure() {
         .expect("storage initialization failed");
 
     let wallet_service = KadeWalletService::new(&storage);
-    let invoice_service = KadeInvoiceService::new(&config, &storage);
+    let invoice_service = KadeInvoiceService::new(None, &storage);
 
     let wallet_req = NewWalletRequest {
         x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),
@@ -537,9 +529,8 @@ async fn should_clean_up_unused_child_key_indices_after_failure() {
 
 #[tokio::test]
 async fn should_fetch_invoices_successfully() {
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );
@@ -552,7 +543,7 @@ async fn should_fetch_invoices_successfully() {
         .await
         .expect("storage initialization failed");
 
-    let invoice_service = KadeInvoiceService::new(&config, &storage);
+    let invoice_service = KadeInvoiceService::new(None, &storage);
     let wallet_service = KadeWalletService::new(&storage);
 
     let wallet_req = NewWalletRequest {
@@ -605,9 +596,8 @@ async fn should_fetch_invoices_successfully() {
 
 #[tokio::test]
 async fn should_fetch_invoice_by_id_successfully() {
-    let config = Config::new();
     let storage = Arc::new(
-        Storage::new(&config, true)
+        Storage::new(None, true)
             .await
             .expect("storage creation failed"),
     );
@@ -622,7 +612,7 @@ async fn should_fetch_invoice_by_id_successfully() {
         .expect("storage initialization failed");
 
     let wallet_service = KadeWalletService::new(&storage);
-    let invoice_service = KadeInvoiceService::new(&config, &storage);
+    let invoice_service = KadeInvoiceService::new(None, &storage);
 
     let wallet_req = NewWalletRequest {
         x_pub_key: "tpubDD1zWV61pKrXhEDL98mbtigniPSEH554pFGJAmoZESF7U2MYBHBktChKvh22HUK5BeQbxd2g73emUsG499U28qEue6Qq5Nrig1NA9ZHFnS4".to_string(),

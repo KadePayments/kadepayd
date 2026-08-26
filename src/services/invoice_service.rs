@@ -17,9 +17,8 @@ use std::sync::Arc;
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
 
-#[derive(Debug)]
 pub struct KadeInvoiceService {
-    config: Config,
+    config: Option<Config>,
     storage: Arc<Storage>,
     test: bool,
 }
@@ -77,17 +76,17 @@ impl KadeInvoiceService {
     pub const SELECT_CHILD_INDICES_BY_WALLET: &'static str =
         "SELECT * FROM child_key_indices WHERE x_pub_key_id = $1;";
 
-    pub fn new(config: &Config, storage: &Arc<Storage>) -> Self {
+    pub fn new(config: Option<&Config>, storage: &Arc<Storage>) -> Self {
         Self {
-            config: config.clone(),
+            config: config.cloned(),
             storage: storage.clone(),
             test: false,
         }
     }
 
-    pub fn new_test(config: Config, storage: &Arc<Storage>) -> Self {
+    pub fn new_test(storage: &Arc<Storage>) -> Self {
         Self {
-            config,
+            config: None,
             storage: storage.clone(),
             test: true,
         }
@@ -199,9 +198,12 @@ impl KadeInvoiceService {
                 if self.test {
                     ArkadeClient::get_test_info()
                 } else {
+                    let config = self
+                        .config
+                        .as_ref()
+                        .expect("Server configuration must be set");
                     let arkade_client =
-                        match ArkadeClient::new_connection(self.config.arkade_server_url.as_str())
-                            .await
+                        match ArkadeClient::new_connection(config.arkade_server_url.as_str()).await
                         {
                             Ok(client) => client,
                             Err(error) => {
