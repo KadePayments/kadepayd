@@ -1,6 +1,6 @@
 pub mod core;
 pub mod data;
-mod server;
+pub mod server;
 pub mod services;
 
 pub mod invoice {

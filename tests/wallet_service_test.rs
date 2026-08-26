@@ -9,14 +9,18 @@ use tonic::{Code, Request};
 async fn should_create_watch_only_wallet_successfully() {
     let x_pub_key = "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55ntaF".to_string();
 
-    let storage = Arc::new(Storage::new(true).await.expect("storage creation failed"));
+    let storage = Arc::new(
+        Storage::new(None, true)
+            .await
+            .expect("storage creation failed"),
+    );
 
     storage
         .init(&[KadeWalletService::CREATE_TABLE])
         .await
         .expect("storage initialization failed");
 
-    let wallet_service = KadeWalletService::new(storage);
+    let wallet_service = KadeWalletService::new(&storage);
 
     let new_wallet_request = NewWalletRequest { x_pub_key };
 
@@ -35,14 +39,18 @@ async fn should_create_watch_only_wallet_successfully() {
 async fn should_fail_to_create_watch_only_wallet_on_invalid_pub_key() {
     let x_pub_key = "tpubDDneEXG899zhkpQt6bqo7fmaSVVi7ErfjNSs82gmTKJHJM5dfzT6f4er8dqgt85z3TYZYzJ7FZeTzKSkX1KKs8ejtXGg4FudTA9TR55nt".to_string();
 
-    let storage = Arc::new(Storage::new(true).await.expect("storage creation failed"));
+    let storage = Arc::new(
+        Storage::new(None, true)
+            .await
+            .expect("storage creation failed"),
+    );
 
     storage
         .init(&[KadeWalletService::CREATE_TABLE])
         .await
         .expect("storage initialization failed");
 
-    let wallet_service = KadeWalletService::new(storage);
+    let wallet_service = KadeWalletService::new(&storage);
 
     let new_wallet_request = NewWalletRequest { x_pub_key };
 

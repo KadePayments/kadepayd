@@ -24,14 +24,14 @@ struct AppState {
     pub invoice_client: InvoiceServiceClient<tonic::transport::Channel>,
 }
 
-pub async fn routes(config: Config) -> Router {
+pub async fn routes(config: &Config) -> Router {
     let uri: Uri = Uri::from_str(&config.api_url).unwrap();
     let grpc_channel = tonic::transport::Channel::builder(uri).connect_lazy();
 
     let invoice_client = InvoiceServiceClient::new(grpc_channel);
     let asset_dir = config.asset_dir.clone();
     let app_state = AppState {
-        config,
+        config: config.clone(),
         invoice_client,
     };
 

@@ -10,6 +10,7 @@ pub enum StorageError {
     PoolTimeoutError,
     TLSError(native_tls::Error),
     EmbeddedDatabaseError(postgresql_embedded::Error),
+    ConfigurationError,
 }
 
 impl std::error::Error for StorageError {}
@@ -23,6 +24,7 @@ impl Display for StorageError {
             StorageError::EmbeddedDatabaseError(error) => {
                 write!(f, "Embedded database error: {}", error)
             }
+            StorageError::ConfigurationError => write!(f, "Configuration error"),
         }
     }
 }
@@ -75,6 +77,10 @@ pub fn handle_storage_error(error: StorageError, message: &str) -> Status {
         StorageError::EmbeddedDatabaseError(error) => {
             eprintln!("{}", error);
             Status::internal("Internal server error")
+        }
+        StorageError::ConfigurationError => {
+            eprintln!("Missing database configuration");
+            Status::internal("Missing database configuration")
         }
     }
 }

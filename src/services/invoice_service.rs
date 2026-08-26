@@ -17,8 +17,8 @@ use std::sync::Arc;
 use tonic::{Request, Response, Status};
 use uuid::Uuid;
 
-#[derive(Debug)]
 pub struct KadeInvoiceService {
+    config: Option<Config>,
     storage: Arc<Storage>,
     test: bool,
 }
@@ -76,16 +76,18 @@ impl KadeInvoiceService {
     pub const SELECT_CHILD_INDICES_BY_WALLET: &'static str =
         "SELECT * FROM child_key_indices WHERE x_pub_key_id = $1;";
 
-    pub fn new(storage: Arc<Storage>) -> Self {
+    pub fn new(config: &Config, storage: &Arc<Storage>) -> Self {
         Self {
-            storage,
+            config: Some(config.clone()),
+            storage: storage.clone(),
             test: false,
         }
     }
 
-    pub fn new_test(storage: Arc<Storage>) -> Self {
+    pub fn new_test(storage: &Arc<Storage>) -> Self {
         Self {
-            storage,
+            config: None,
+            storage: storage.clone(),
             test: true,
         }
     }
@@ -196,20 +198,27 @@ impl KadeInvoiceService {
                 if self.test {
                     ArkadeClient::get_test_info()
                 } else {
-                    let server_config = Config::new();
-                    let arkade_client = match ArkadeClient::new_connection(
-                        server_config.arkade_server_url.as_str(),
-                    )
-                    .await
-                    {
-                        Ok(client) => client,
-                        Err(error) => {
+                    let config = match self.config.as_ref() {
+                        Some(config) => config,
+                        None => {
                             return Err((
-                                Status::from_error(Box::from(error)),
+                                Status::internal("Missing server configuration"),
                                 Some((x_pub_key_id, new_child_key_index)),
                             ));
                         }
                     };
+
+                    let arkade_client =
+                        match ArkadeClient::new_connection(config.arkade_server_url.as_str()).await
+                        {
+                            Ok(client) => client,
+                            Err(error) => {
+                                return Err((
+                                    Status::from_error(Box::from(error)),
+                                    Some((x_pub_key_id, new_child_key_index)),
+                                ));
+                            }
+                        };
                     match arkade_client.get_info().await {
                         Ok(server_info) => server_info,
                         Err(status) => {

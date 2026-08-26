@@ -18,23 +18,26 @@ impl Storage {
     const MAX_CONNECTIONS: u32 = 13;
     const MIN_IDLE_CONNECTIONS: u32 = 3;
 
-    pub async fn new(embedded: bool) -> Result<Storage, StorageError> {
-        let (connection_string, db_process): (String, Option<PostgreSQL>) = if embedded {
-            let (conn_s, db_p) = Self::create_embedded_db().await?;
-            (conn_s, Some(db_p))
-        } else {
-            let config = Config::new();
-            (
-                format!(
-                    "host={} user={} password={} dbname={}",
-                    config.kadepay_db_host,
-                    config.kadepay_db_user,
-                    config.kadepay_db_password,
-                    config.kadepay_db_name
-                ),
-                None,
-            )
-        };
+    pub async fn new(config: Option<&Config>, embedded: bool) -> Result<Storage, StorageError> {
+        let (connection_string, db_process): (String, Option<PostgreSQL>) =
+            if embedded && config.is_none() {
+                let (conn_s, db_p) = Self::create_embedded_db().await?;
+                (conn_s, Some(db_p))
+            } else {
+                match config {
+                    Some(config) => (
+                        format!(
+                            "host={} user={} password={} dbname={}",
+                            config.kadepay_db_host,
+                            config.kadepay_db_user,
+                            config.kadepay_db_password,
+                            config.kadepay_db_name
+                        ),
+                        None,
+                    ),
+                    None => return Err(StorageError::ConfigurationError),
+                }
+            };
         let tls_connector = TlsConnector::builder().build()?;
         let tls = MakeTlsConnector::new(tls_connector);
         let pool_connection_manager =

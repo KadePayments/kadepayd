@@ -26,8 +26,10 @@ impl KadeWalletService {
 
     const SELECT_BY_PUBKEY: &'static str = "SELECT * FROM wallets WHERE x_pub_key = $1;";
 
-    pub fn new(storage: Arc<Storage>) -> Self {
-        Self { storage }
+    pub fn new(storage: &Arc<Storage>) -> Self {
+        Self {
+            storage: storage.clone(),
+        }
     }
 
     pub(crate) async fn get_x_pub_key(&self, id: Uuid) -> Result<String, Status> {
