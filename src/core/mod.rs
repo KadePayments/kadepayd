@@ -100,6 +100,17 @@ pub fn sats_to_btc(sats: Decimal) -> Option<Decimal> {
     sats.checked_div(100_000_000.into())
 }
 
+pub fn sats_from_str(amount: &str) -> Result<Decimal, Status> {
+    let sats = match Decimal::from_str(amount) {
+        Ok(sats) => sats,
+        Err(_) => return Err(Status::invalid_argument("Failed to parse invoice amount")),
+    };
+    match sats_to_btc(sats) {
+        Some(sats) => Ok(sats),
+        None => Err(Status::invalid_argument("Failed to parse sat amount")),
+    }
+}
+
 pub fn format_amount(amount: &str, currency_code: &str) -> Result<String, Status> {
     let amount = if currency_code == "SATS" {
         let sats = match Decimal::from_str(amount) {
