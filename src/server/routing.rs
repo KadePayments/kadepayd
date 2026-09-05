@@ -1,4 +1,4 @@
-use crate::core::{format_amount, svg_qr_code};
+use crate::core::{format_amount, sats_from_str, svg_qr_code};
 use crate::data::{NewInvoiceQuery, NewInvoiceResponse, NewPaymentRequest};
 use crate::invoice::GetInvoiceRequest;
 use crate::invoice::invoice_service_client::InvoiceServiceClient;
@@ -6,6 +6,7 @@ use axum::extract::{Query, State};
 use axum::http::{Method, StatusCode, Uri};
 use axum::response::{Html, IntoResponse};
 
+use crate::core::bitcoin::uri::encode_bitcoin_uri;
 use crate::server::config::Config;
 use crate::server::to_http_status;
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
@@ -13,8 +14,8 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use html_escape::encode_text_to_string;
 use std::str::FromStr;
-use tonic::Request;
 use tonic::codegen::http::header::ACCESS_CONTROL_ALLOW_ORIGIN;
+use tonic::{Request, Status};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 
@@ -94,7 +95,39 @@ async fn new_invoice_page(
         &mut amount,
     );
 
-    let qr_code = match svg_qr_code(address.as_str(), state.config.asset_dir) {
+    let btc_amount = if invoice.currency_code == "SATS" {
+        match sats_from_str(&invoice.amount) {
+            Ok(amount) => amount,
+            Err(status) => return to_http_status(status).into_response(),
+        }
+    } else {
+        return to_http_status(Status::invalid_argument("Unsupported invoice currency"))
+            .into_response();
+    };
+
+    let mut label = "Payment".to_string();
+    match invoice.metadata.get("label") {
+        Some(l) => label = l.to_string(),
+        None => {}
+    };
+
+    let uri = if invoice.chain == "Bitcoin" {
+        match encode_bitcoin_uri(
+            &address,
+            &btc_amount,
+            &label,
+            &invoice.description,
+            &invoice.network,
+        ) {
+            Ok(uri) => uri,
+            Err(status) => return to_http_status(status).into_response(),
+        }
+    } else {
+        return to_http_status(Status::invalid_argument("Unsupported invoice chain"))
+            .into_response();
+    };
+
+    let qr_code = match svg_qr_code(uri.as_str(), state.config.asset_dir) {
         Ok(qr_code) => qr_code,
         Err(status) => return to_http_status(status).into_response(),
     };
