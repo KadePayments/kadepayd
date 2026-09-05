@@ -1,11 +1,10 @@
-use crate::core::{format_amount, sats_from_str, sats_to_btc, svg_qr_code};
+use crate::core::{format_amount, sats_from_str, svg_qr_code};
 use crate::data::{NewInvoiceQuery, NewInvoiceResponse, NewPaymentRequest};
 use crate::invoice::GetInvoiceRequest;
 use crate::invoice::invoice_service_client::InvoiceServiceClient;
 use axum::extract::{Query, State};
 use axum::http::{Method, StatusCode, Uri};
 use axum::response::{Html, IntoResponse};
-use std::os::linux::raw::stat;
 
 use crate::core::bitcoin::uri::encode_bitcoin_uri;
 use crate::server::config::Config;
@@ -101,14 +100,16 @@ async fn new_invoice_page(
         Err(status) => return to_http_status(status).into_response(),
     };
 
-    let uri = encode_bitcoin_uri(
+    let uri = match encode_bitcoin_uri(
         &address,
         &btc_amount,
         &invoice.metadata["label"],
         &invoice.description,
         &invoice.network,
-    )
-    .to_uppercase();
+    ) {
+        Ok(uri) => uri,
+        Err(status) => return to_http_status(status).into_response(),
+    };
 
     let qr_code = match svg_qr_code(uri.as_str(), state.config.asset_dir) {
         Ok(qr_code) => qr_code,

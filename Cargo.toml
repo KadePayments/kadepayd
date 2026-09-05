@@ -29,6 +29,7 @@ axum = { version = "0.8.9", features = ["macros"] }
 tower-http = { version = "0.7.0", features = ["cors", "fs"] }
 qrcode = "0.14.1"
 html-escape = "0.2.15"
+bip321 = "0.4.0"
 
 [build-dependencies]
 tonic-prost-build = "0.14.6"
