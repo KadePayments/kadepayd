@@ -29,7 +29,10 @@ pub fn encode_bitcoin_uri(
     uri.set_label(label.to_string());
     uri.set_message(message.to_string());
 
-    let is_testnet: bool = network == "testnet" || network == "signet" || network == "testnet4";
+    let is_testnet: bool = network == "testnet"
+        || network == "signet"
+        || network == "testnet4"
+        || network == "regtest";
     if is_testnet {
         match uri.push_tb(address, false) {
             Ok(_) => {}
